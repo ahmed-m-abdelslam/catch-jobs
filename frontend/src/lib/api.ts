@@ -3,3 +3,128 @@ const API_URL = typeof window !== "undefined"
     ? `${window.location.protocol}//${window.location.hostname}:8001/api`
     : "/api"
   : "/api";
+
+class ApiClient {
+  private getHeaders(auth = true): Record<string, string> {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (auth && typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
+  async register(email: string, password: string, full_name: string) {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: "POST",
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ email, password, full_name }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Register failed");
+    return res.json();
+  }
+
+  async login(email: string, password: string) {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Login failed");
+    return res.json();
+  }
+
+  async getMe() {
+    const res = await fetch(`${API_URL}/auth/me`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Not authenticated");
+    return res.json();
+  }
+
+  async getJobs(params: Record<string, string> = {}) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_URL}/jobs?${query}`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch jobs");
+    return res.json();
+  }
+
+  async getRecommended() {
+    const res = await fetch(`${API_URL}/jobs/recommended`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch recommended");
+    return res.json();
+  }
+
+  async getFilters() {
+    const res = await fetch(`${API_URL}/jobs/filters`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch filters");
+    return res.json();
+  }
+
+  async getJobStats() {
+    const res = await fetch(`${API_URL}/jobs/stats`, { headers: this.getHeaders(false) });
+    if (!res.ok) throw new Error("Failed to fetch stats");
+    return res.json();
+  }
+
+  async saveJob(jobId: string) {
+    const res = await fetch(`${API_URL}/jobs/save/${jobId}`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to save job");
+    return res.json();
+  }
+
+  async getSavedJobs() {
+    const res = await fetch(`${API_URL}/jobs/saved`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch saved jobs");
+    return res.json();
+  }
+
+  async getPreferences() {
+    const res = await fetch(`${API_URL}/preferences`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch preferences");
+    return res.json();
+  }
+
+  async addPreference(data: { job_title: string; country?: string; experience_level?: string; remote_allowed?: boolean }) {
+    const res = await fetch(`${API_URL}/preferences`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to add preference");
+    return res.json();
+  }
+
+  async deletePreference(id: string) {
+    const res = await fetch(`${API_URL}/preferences/${id}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to delete preference");
+    return res.json();
+  }
+
+  async getNotifications() {
+    const res = await fetch(`${API_URL}/notifications`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch notifications");
+    return res.json();
+  }
+
+  async getNotificationCount() {
+    const res = await fetch(`${API_URL}/notifications/unread-count`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch count");
+    return res.json();
+  }
+
+  async markNotificationRead(id: string) {
+    const res = await fetch(`${API_URL}/notifications/${id}/read`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to mark read");
+    return res.json();
+  }
+}
+
+export const api = new ApiClient();
