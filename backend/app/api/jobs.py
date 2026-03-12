@@ -121,7 +121,7 @@ async def get_recommended(
     return [JobResponse.model_validate(j) for j in all_jobs[:limit]]
 
 
-@router.get("/saved/list", response_model=list[JobResponse])
+@router.get("/saved", response_model=list[JobResponse])
 async def get_saved_jobs(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -192,7 +192,7 @@ async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     return JobResponse.model_validate(job)
 
 
-@router.post("/{job_id}/save")
+@router.post("/save/{job_id}")
 async def save_job(
     job_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
@@ -209,7 +209,7 @@ async def save_job(
     return {"detail": "Job saved"}
 
 
-@router.delete("/{job_id}/save")
+@router.delete("/save/{job_id}")
 async def unsave_job(
     job_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
