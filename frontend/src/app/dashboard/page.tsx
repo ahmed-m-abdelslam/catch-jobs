@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import JobCard from "@/components/JobCard";
 import Image from "next/image";
@@ -39,6 +39,7 @@ export default function DashboardPage() {
     api.getFilters().then((f: any) => { setCountries(f.countries || []); setSources(f.sources || []); }).catch(() => {});
     api.getJobStats().then(setStats).catch(() => {});
     api.getSavedJobs().then((jobs: any[]) => { setSavedJobs(jobs); setSavedIds(new Set(jobs.map((j: any) => j.id))); }).catch(() => {});
+    api.getPreferences().then(setPreferences).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   }, [activeTab]);
 
   function loadRecommended() {
+    if (preferences.length === 0) return;
     setLoading(true);
     api.getRecommended(30).then(setRecommendedJobs).finally(() => setLoading(false));
   }
@@ -96,7 +98,17 @@ export default function DashboardPage() {
   function addPref() {
     if (!newTitle || !newCountry) return;
     api.addPreference({ job_title: newTitle, country: newCountry, remote_allowed: newRemote })
-      .then(() => { setNewTitle(""); setNewCountry(""); api.getPreferences().then(setPreferences); });
+      .then(() => {
+        setNewTitle("");
+        setNewCountry("");
+        api.getPreferences().then((prefs: any[]) => {
+          setPreferences(prefs);
+          // Auto-switch to recommended after first preference
+          if (prefs.length === 1) {
+            setActiveTab("recommended");
+          }
+        });
+      });
   }
 
   function delPref(id: string) {
@@ -114,7 +126,7 @@ export default function DashboardPage() {
     { key: "recommended", label: "For You", icon: "✨" },
     { key: "search", label: "Search", icon: "🔍" },
     { key: "saved", label: "Saved", icon: "💾", count: savedIds.size },
-    { key: "preferences", label: "Settings", icon: "⚙️" },
+    { key: "preferences", label: "My Filters", icon: "⚙️" },
   ];
 
   const Spinner = () => (
@@ -135,10 +147,8 @@ export default function DashboardPage() {
 
   function renderPagination() {
     if (totalPages <= 1) return null;
-
     const pages: (number | string)[] = [];
     const maxVisible = 5;
-
     if (totalPages <= maxVisible + 2) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
@@ -150,29 +160,22 @@ export default function DashboardPage() {
       if (currentPage < totalPages - 2) pages.push("...");
       pages.push(totalPages);
     }
-
     return (
       <div className="flex items-center justify-center gap-2 mt-8 mb-4">
         <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
           className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
           ← Prev
         </button>
-
         {pages.map((p, i) =>
           typeof p === "string" ? (
             <span key={`dots-${i}`} className="px-2 text-gray-400">...</span>
           ) : (
             <button key={p} onClick={() => goToPage(p)}
               className={`w-10 h-10 text-sm font-semibold rounded-lg transition ${
-                p === currentPage
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-              }`}>
-              {p}
-            </button>
+                p === currentPage ? "bg-blue-600 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}>{p}</button>
           )
         )}
-
         <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}
           className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
           Next →
@@ -243,23 +246,74 @@ export default function DashboardPage() {
         {/* RECOMMENDED */}
         {activeTab === "recommended" && (
           <div>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-xl font-extrabold text-gray-900">Recommended for You</h2>
-                <p className="text-sm text-gray-400 mt-0.5">Matched to your preferences · Latest first</p>
-              </div>
-              <button onClick={loadRecommended} className="btn btn-outline text-xs py-2 px-4">↻ Refresh</button>
-            </div>
-            {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
-              <EmptyState icon="🎯" title="No recommendations yet" subtitle="Set your job preferences to get matched"
-                action={<button onClick={() => setActiveTab("preferences")} className="btn btn-primary text-xs py-2">Set Preferences</button>} />
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {recommendedJobs.map((job: any, i: number) => (
-                  <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
-                    <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
+            {preferences.length === 0 ? (
+              /* No filters set - show setup screen */
+              <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100">
+                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-6">
+                  <span className="text-4xl">🎯</span>
+                </div>
+                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Set up your job filters</h2>
+                <p className="text-base text-gray-500 mb-8 text-center max-w-md">
+                  Tell us what kind of jobs you're looking for and we'll show you the best matches. Add at least one filter to get started.
+                </p>
+
+                {/* Inline filter form */}
+                <div className="w-full max-w-2xl bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-700 mb-4">Add your first filter</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600 mb-1.5">Job Title</label>
+                      <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                        placeholder="e.g. Software Engineer, Data Analyst..."
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-600 mb-1.5">Country</label>
+                      <input type="text" value={newCountry} onChange={e => setNewCountry(e.target.value)}
+                        placeholder="e.g. Egypt, Saudi Arabia, Remote..."
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white" />
+                    </div>
                   </div>
-                ))}
+                  <div className="flex items-center justify-between mt-4">
+                    <label className="flex items-center gap-2.5 text-sm text-gray-600 font-medium cursor-pointer">
+                      <input type="checkbox" checked={newRemote} onChange={e => setNewRemote(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+                      Include Remote Jobs
+                    </label>
+                    <button onClick={addPref} disabled={!newTitle || !newCountry}
+                      className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                      Save & Show Jobs →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Filters exist - show recommended jobs */
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-gray-900">Recommended for You</h2>
+                    <p className="text-sm text-gray-400 mt-0.5">
+                      Based on: {preferences.map((p: any) => `${p.job_title} in ${p.country}`).join(" · ")}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setActiveTab("preferences")} className="btn btn-outline text-xs py-2 px-4">Edit Filters</button>
+                    <button onClick={loadRecommended} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
+                  </div>
+                </div>
+                {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
+                  <EmptyState icon="📭" title="No matching jobs found" subtitle="Try adjusting your filters or check back later"
+                    action={<button onClick={() => setActiveTab("preferences")} className="btn btn-primary text-xs py-2">Edit Filters</button>} />
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {recommendedJobs.map((job: any, i: number) => (
+                      <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
+                        <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -269,7 +323,6 @@ export default function DashboardPage() {
         {activeTab === "search" && (
           <div>
             <h2 className="text-xl font-extrabold text-gray-900 mb-5">Search Jobs</h2>
-
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-5">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
@@ -309,7 +362,6 @@ export default function DashboardPage() {
                   <button onClick={() => { clearFilters(); setTimeout(() => doSearch(1), 50); }} className="btn btn-outline py-2.5 text-[13px]">Clear</button>
                 </div>
               </div>
-
               {(filterCountry || filterSource || filterDays || searchText) && (
                 <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
                   <span className="text-[11px] text-gray-400 self-center font-medium">Filters:</span>
@@ -320,7 +372,6 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-
             {loading ? <Spinner /> : searchJobs.length === 0 ? (
               <EmptyState icon="🔍" title="No jobs found" subtitle="Try adjusting your filters or search terms" />
             ) : (
@@ -359,12 +410,14 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* PREFERENCES */}
+        {/* PREFERENCES / MY FILTERS */}
         {activeTab === "preferences" && (
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900 mb-5">Job Preferences</h2>
+            <h2 className="text-xl font-extrabold text-gray-900 mb-2">My Filters</h2>
+            <p className="text-sm text-gray-400 mb-5">Manage your job filters. Jobs in "For You" are matched based on these.</p>
+
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-              <h3 className="text-sm font-bold text-gray-700 mb-4">Add New Preference</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-4">Add New Filter</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="label">Job Title</label>
@@ -380,19 +433,20 @@ export default function DashboardPage() {
                   <label className="flex items-center gap-2.5 text-sm text-gray-600 font-medium cursor-pointer">
                     <input type="checkbox" checked={newRemote} onChange={e => setNewRemote(e.target.checked)}
                       className="w-4 h-4 text-blue-600 rounded border-gray-300" />
-                    Include Remote Jobs
+                    Include Remote
                   </label>
                 </div>
                 <div className="flex items-end">
-                  <button onClick={addPref} className="btn w-full py-2.5 text-[13px] bg-emerald-600 text-white hover:bg-emerald-700">
-                    + Add Preference
+                  <button onClick={addPref} disabled={!newTitle || !newCountry}
+                    className="btn w-full py-2.5 text-[13px] bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                    + Add Filter
                   </button>
                 </div>
               </div>
             </div>
 
             {preferences.length === 0 ? (
-              <EmptyState icon="⚙️" title="No preferences set" subtitle="Add your ideal job title and country to get recommendations" />
+              <EmptyState icon="⚙️" title="No filters set" subtitle="Add your ideal job title and country to get personalized recommendations" />
             ) : (
               <div className="space-y-2.5">
                 {preferences.map((pref: any) => (
