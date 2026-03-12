@@ -4,10 +4,6 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*/",
-        destination: "https://catch-jobs-production.up.railway.app/api/:path*/",
-      },
-      {
         source: "/api/:path*",
         destination: "https://catch-jobs-production.up.railway.app/api/:path*",
       },
