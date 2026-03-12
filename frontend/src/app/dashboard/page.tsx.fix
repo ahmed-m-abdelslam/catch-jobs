@@ -1,0 +1,6 @@
+    const params: Record<string, string> = {};
+    if (searchText) params.search = searchText;
+    if (filterCountry) params.country = filterCountry;
+    if (filterSource) params.source = filterSource;
+    if (filterDays) params.days = filterDays;
+    api.getJobs(params)

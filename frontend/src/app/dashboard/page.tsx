@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [searchText, setSearchText] = useState("");
   const [filterCountry, setFilterCountry] = useState("");
   const [filterSource, setFilterSource] = useState("");
-  const [filterDays, setFilterDays] = useState<number | undefined>();
+  const [filterDays, setFilterDays] = useState("");
   const [countries, setCountries] = useState<{ name: string; count: number }[]>([]);
   const [sources, setSources] = useState<{ name: string; count: number }[]>([]);
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
@@ -57,13 +57,12 @@ export default function DashboardPage() {
 
   function doSearch() {
     setLoading(true);
-    api.getJobs({
-      search: searchText || undefined,
-      country: filterCountry || undefined,
-      source: filterSource || undefined,
-      days: filterDays,
-      page_size: 50,
-    }).then(setSearchJobs).finally(() => setLoading(false));
+    const params: Record<string, string> = {};
+    if (searchText) params.search = searchText;
+    if (filterCountry) params.country = filterCountry;
+    if (filterSource) params.source = filterSource;
+    if (filterDays) params.days = String(filterDays);
+    api.getJobs(params).then(setSearchJobs).finally(() => setLoading(false));
   }
 
   function handleSave(id: string) {
@@ -88,7 +87,7 @@ export default function DashboardPage() {
     setSearchText("");
     setFilterCountry("");
     setFilterSource("");
-    setFilterDays(undefined);
+    setFilterDays("");
   }
 
   const tabs: { key: Tab; label: string; icon: string; count?: number }[] = [
@@ -146,7 +145,7 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-gray-700">{user.full_name}</span>
               </div>
             )}
-            <button onClick={() => { api.clearToken(); window.location.href = "/login"; }}
+            <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
               className="text-xs text-gray-400 hover:text-red-500 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
               Logout
             </button>
@@ -236,7 +235,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <label className="label">Time Period</label>
-                  <select value={filterDays || ""} onChange={e => setFilterDays(e.target.value ? Number(e.target.value) : undefined)} className="input">
+                  <select value={filterDays || ""} onChange={e => setFilterDays(e.target.value)} className="input">
                     <option value="">Any Time</option>
                     <option value="1">24 Hours</option>
                     <option value="2">2 Days</option>
