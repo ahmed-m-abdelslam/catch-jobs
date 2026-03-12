@@ -9,3 +9,4 @@ node_modules/
 celerybeat-schedule
 celerybeat-schedule.db
 .DS_Store
+frontend/node_modules/
