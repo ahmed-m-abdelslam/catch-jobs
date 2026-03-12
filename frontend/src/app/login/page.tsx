@@ -23,7 +23,7 @@ export default function LoginPage() {
       } else {
         result = await api.login(email, password);
       }
-      api.setToken(result.access_token);
+      localStorage.setItem("token", result.access_token);
       window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "Invalid credentials");
