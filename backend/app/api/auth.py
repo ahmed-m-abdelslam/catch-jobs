@@ -10,14 +10,13 @@ import jwt
 from app.database import get_db
 from app.config import get_settings
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, VerifyCode, ResendCode
-from app.services.email_service import send_verification_email, verify_code, get_pending_user
+from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, VerifyCode, ResendCode, ForgotPassword, ResetPassword
+from app.services.email_service import send_verification_email, verify_code, get_pending_user, send_reset_password_email, verify_reset_code
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
 settings = get_settings()
 
-# Temporary store for pending registrations (password included)
 pending_registrations: dict = {}
 
 
@@ -57,18 +56,15 @@ async def get_current_user(
 
 @router.post("/register")
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Check if email already registered
     existing = await db.execute(select(User).where(User.email == data.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Store password temporarily and send verification code
     try:
         send_verification_email(data.email, data.full_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send verification email: {str(e)}")
 
-    # Save registration data temporarily
     pending_registrations[data.email] = {
         "password": data.password,
         "full_name": data.full_name,
@@ -80,24 +76,20 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.post("/verify-code", response_model=TokenResponse)
 async def verify_email_code(data: VerifyCode, db: AsyncSession = Depends(get_db)):
-    # Check if code is valid
     if not verify_code(data.email, data.code):
         raise HTTPException(status_code=400, detail="Invalid or expired verification code")
 
-    # Get pending registration data
     reg_data = pending_registrations.get(data.email)
     if not reg_data or datetime.utcnow() > reg_data["expires"]:
         if data.email in pending_registrations:
             del pending_registrations[data.email]
         raise HTTPException(status_code=400, detail="Registration expired. Please register again.")
 
-    # Check again if email exists (race condition protection)
     existing = await db.execute(select(User).where(User.email == data.email))
     if existing.scalar_one_or_none():
         del pending_registrations[data.email]
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Create user
     user = User(
         email=data.email,
         password_hash=hash_password(reg_data["password"]),
@@ -107,7 +99,6 @@ async def verify_email_code(data: VerifyCode, db: AsyncSession = Depends(get_db)
     db.add(user)
     await db.flush()
 
-    # Cleanup
     del pending_registrations[data.email]
 
     token = create_access_token(user.id)
@@ -127,6 +118,39 @@ async def resend_code(data: ResendCode):
         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
 
     return {"message": "New verification code sent"}
+
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPassword, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        return {"message": "If this email exists, a reset code has been sent"}
+
+    try:
+        send_reset_password_email(data.email)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
+    return {"message": "If this email exists, a reset code has been sent"}
+
+
+@router.post("/reset-password")
+async def reset_password(data: ResetPassword, db: AsyncSession = Depends(get_db)):
+    if not verify_reset_code(data.email, data.code):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+
+    user.password_hash = hash_password(data.new_password)
+    await db.flush()
+
+    return {"message": "Password reset successfully"}
 
 
 @router.post("/login", response_model=TokenResponse)

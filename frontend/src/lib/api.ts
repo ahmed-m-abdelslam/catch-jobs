@@ -16,8 +16,7 @@ class ApiClient {
 
   async register(email: string, password: string, full_name: string) {
     const res = await fetch(`${API_URL}/auth/register`, {
-      method: "POST",
-      headers: this.getHeaders(false),
+      method: "POST", headers: this.getHeaders(false),
       body: JSON.stringify({ email, password, full_name }),
     });
     if (!res.ok) throw new Error((await res.json()).detail || "Register failed");
@@ -26,8 +25,7 @@ class ApiClient {
 
   async verifyCode(email: string, code: string) {
     const res = await fetch(`${API_URL}/auth/verify-code`, {
-      method: "POST",
-      headers: this.getHeaders(false),
+      method: "POST", headers: this.getHeaders(false),
       body: JSON.stringify({ email, code }),
     });
     if (!res.ok) throw new Error((await res.json()).detail || "Verification failed");
@@ -36,18 +34,34 @@ class ApiClient {
 
   async resendCode(email: string) {
     const res = await fetch(`${API_URL}/auth/resend-code`, {
-      method: "POST",
-      headers: this.getHeaders(false),
+      method: "POST", headers: this.getHeaders(false),
       body: JSON.stringify({ email }),
     });
     if (!res.ok) throw new Error((await res.json()).detail || "Failed to resend");
     return res.json();
   }
 
+  async forgotPassword(email: string) {
+    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: "POST", headers: this.getHeaders(false),
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Failed to send reset code");
+    return res.json();
+  }
+
+  async resetPassword(email: string, code: string, new_password: string) {
+    const res = await fetch(`${API_URL}/auth/reset-password`, {
+      method: "POST", headers: this.getHeaders(false),
+      body: JSON.stringify({ email, code, new_password }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Failed to reset password");
+    return res.json();
+  }
+
   async login(email: string, password: string) {
     const res = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: this.getHeaders(false),
+      method: "POST", headers: this.getHeaders(false),
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) throw new Error((await res.json()).detail || "Login failed");
@@ -87,8 +101,7 @@ class ApiClient {
 
   async saveJob(jobId: string) {
     const res = await fetch(`${API_URL}/jobs/save/${jobId}`, {
-      method: "POST",
-      headers: this.getHeaders(),
+      method: "POST", headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error("Failed to save job");
     return res.json();
@@ -108,8 +121,7 @@ class ApiClient {
 
   async addPreference(data: { job_title: string; country?: string; experience_level?: string; remote_allowed?: boolean }) {
     const res = await fetch(`${API_URL}/preferences`, {
-      method: "POST",
-      headers: this.getHeaders(),
+      method: "POST", headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error("Failed to add preference");
@@ -118,8 +130,7 @@ class ApiClient {
 
   async deletePreference(id: string) {
     const res = await fetch(`${API_URL}/preferences/${id}`, {
-      method: "DELETE",
-      headers: this.getHeaders(),
+      method: "DELETE", headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error("Failed to delete preference");
     return res.json();
@@ -139,8 +150,7 @@ class ApiClient {
 
   async markNotificationRead(id: string) {
     const res = await fetch(`${API_URL}/notifications/${id}/read`, {
-      method: "PUT",
-      headers: this.getHeaders(),
+      method: "PUT", headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error("Failed to mark read");
     return res.json();
