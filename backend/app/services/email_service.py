@@ -46,7 +46,7 @@ def send_verification_email(email: str, full_name: str) -> str:
     
     try:
         resend.Emails.send({
-            "from": "Catch Jobs <onboarding@resend.dev>",
+            "from": "Catch Jobs <noreply@catchjobs.work>",
             "to": [email],
             "subject": f"Your verification code: {code}",
             "html": html_content,
