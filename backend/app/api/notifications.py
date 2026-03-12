@@ -10,7 +10,7 @@ from app.models.job import Job
 from app.models.notification import UserNotification
 from app.schemas.job import JobResponse
 
-router = APIRouter(prefix="/notifications", tags=["Notifications"])
+router = APIRouter(redirect_slashes=False, prefix="/notifications", tags=["Notifications"])
 
 
 @router.get("/")

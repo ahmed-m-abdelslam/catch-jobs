@@ -9,7 +9,7 @@ from app.models.user import User
 from app.models.preference import UserPreference
 from app.schemas.preference import PreferenceCreate, PreferenceUpdate, PreferenceResponse
 
-router = APIRouter(prefix="/preferences", tags=["Preferences"])
+router = APIRouter(redirect_slashes=False, prefix="/preferences", tags=["Preferences"])
 
 
 @router.get("/", response_model=list[PreferenceResponse])

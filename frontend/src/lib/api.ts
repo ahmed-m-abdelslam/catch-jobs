@@ -76,31 +76,31 @@ class ApiClient {
 
   async getJobs(params: Record<string, string> = {}) {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_URL}/jobs/?${query}`, { headers: this.getHeaders() });
+    const res = await fetch(`${API_URL}/jobs?${query}`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch jobs");
     return res.json();
   }
 
   async getRecommended(limit: number = 20) {
-    const res = await fetch(`${API_URL}/jobs/recommended/?limit=${limit}`, { headers: this.getHeaders() });
+    const res = await fetch(`${API_URL}/jobs/recommended?limit=${limit}`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch recommended");
     return res.json();
   }
 
   async getFilters() {
-    const res = await fetch(`${API_URL}/jobs/filters/`, { headers: this.getHeaders() });
+    const res = await fetch(`${API_URL}/jobs/filters`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch filters");
     return res.json();
   }
 
   async getJobStats() {
-    const res = await fetch(`${API_URL}/jobs/stats/`, { headers: this.getHeaders(false) });
+    const res = await fetch(`${API_URL}/jobs/stats`, { headers: this.getHeaders(false) });
     if (!res.ok) throw new Error("Failed to fetch stats");
     return res.json();
   }
 
   async saveJob(jobId: string) {
-    const res = await fetch(`${API_URL}/jobs/save/${jobId}/`, {
+    const res = await fetch(`${API_URL}/jobs/save/${jobId}`, {
       method: "POST", headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error("Failed to save job");
@@ -108,7 +108,7 @@ class ApiClient {
   }
 
   async getSavedJobs() {
-    const res = await fetch(`${API_URL}/jobs/saved/`, { headers: this.getHeaders() });
+    const res = await fetch(`${API_URL}/jobs/saved`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch saved jobs");
     return res.json();
   }

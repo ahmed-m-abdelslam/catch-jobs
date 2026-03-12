@@ -13,7 +13,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, VerifyCode, ResendCode, ForgotPassword, ResetPassword
 from app.services.email_service import send_verification_email, verify_code, get_pending_user, send_reset_password_email, verify_reset_code
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(redirect_slashes=False, prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
 settings = get_settings()
 
