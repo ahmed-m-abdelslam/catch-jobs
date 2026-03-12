@@ -27,8 +27,6 @@ export default function DashboardPage() {
   const [newRemote, setNewRemote] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [saveMsg, setSaveMsg] = useState("");
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
@@ -97,19 +95,7 @@ export default function DashboardPage() {
   function addPref() {
     if (!newTitle || !newCountry) return;
     api.addPreference({ job_title: newTitle, country: newCountry, remote_allowed: newRemote })
-      .then(() => {
-        setNewTitle("");
-        setNewCountry("");
-        api.getPreferences().then((prefs: any[]) => {
-          setPreferences(prefs);
-          // Load recommended directly then switch tab
-          setLoading(true);
-          api.getRecommended(30).then((jobs: any[]) => {
-            setRecommendedJobs(jobs);
-            setActiveTab("recommended");
-          }).finally(() => setLoading(false));
-        });
-      });
+      .then(() => { setNewTitle(""); setNewCountry(""); api.getPreferences().then(setPreferences); });
   }
 
   function delPref(id: string) {
@@ -127,7 +113,7 @@ export default function DashboardPage() {
     { key: "recommended", label: "For You", icon: "✨" },
     { key: "search", label: "Search", icon: "🔍" },
     { key: "saved", label: "Saved", icon: "💾", count: savedIds.size },
-    { key: "preferences", label: "My Filters", icon: "⚙️" },
+    { key: "preferences", label: "Preferences", icon: "⚙️" },
   ];
 
   const Spinner = () => (
@@ -149,8 +135,7 @@ export default function DashboardPage() {
   function renderPagination() {
     if (totalPages <= 1) return null;
     const pages: (number | string)[] = [];
-    const maxVisible = 5;
-    if (totalPages <= maxVisible + 2) {
+    if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
@@ -244,83 +229,29 @@ export default function DashboardPage() {
 
       <div className="w-full px-5 sm:px-8 py-5">
 
-        {/* RECOMMENDED */}
         {activeTab === "recommended" && (
           <div>
-            {preferences.length === 0 ? (
-              /* No filters set - show setup screen */
-              <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100">
-                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-6">
-                  <span className="text-4xl">🎯</span>
-                </div>
-                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Set up your job filters</h2>
-                <p className="text-base text-gray-500 mb-8 text-center max-w-md">
-                  Tell us what kind of jobs you're looking for and we'll show you the best matches. Add at least one filter to get started.
-                </p>
-
-                {/* Inline filter form */}
-                <div className="w-full max-w-2xl bg-gray-50 rounded-xl p-6 border border-gray-200">
-                  <h3 className="text-sm font-bold text-gray-700 mb-4">Add your first filter</h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-600 mb-1.5">Job Title</label>
-                      <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
-                        placeholder="e.g. Software Engineer, Data Analyst..."
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-600 mb-1.5">Country</label>
-                      <input type="text" value={newCountry} onChange={e => setNewCountry(e.target.value)}
-                        placeholder="e.g. Egypt, Saudi Arabia, Remote..."
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-4">
-                    <label className="flex items-center gap-2.5 text-sm text-gray-600 font-medium cursor-pointer">
-                      <input type="checkbox" checked={newRemote} onChange={e => setNewRemote(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300" />
-                      Include Remote Jobs
-                    </label>
-                    <button onClick={addPref} disabled={!newTitle || !newCountry}
-                      className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                      Save & Show Jobs →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Filters exist - show recommended jobs */
+            <div className="flex items-center justify-between mb-5">
               <div>
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h2 className="text-xl font-extrabold text-gray-900">Recommended for You</h2>
-                    <p className="text-sm text-gray-400 mt-0.5">
-                      Based on: {preferences.map((p: any) => `${p.job_title} in ${p.country}`).join(" · ")}
-                    </p>
+                <h2 className="text-xl font-extrabold text-gray-900">Latest Jobs</h2>
+                <p className="text-sm text-gray-400 mt-0.5">Newest jobs added · Updated every 10 minutes</p>
+              </div>
+              <button onClick={loadRecommended} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
+            </div>
+            {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
+              <EmptyState icon="📭" title="No jobs yet" subtitle="Jobs are being collected. Check back soon!" />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {recommendedJobs.map((job: any, i: number) => (
+                  <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
+                    <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setActiveTab("preferences")} className="btn btn-outline text-xs py-2 px-4">Edit Filters</button>
-                    <button onClick={loadRecommended} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
-                  </div>
-                </div>
-                {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
-                  <EmptyState icon="📭" title="No matching jobs found" subtitle="Try adjusting your filters or check back later"
-                    action={<button onClick={() => setActiveTab("preferences")} className="btn btn-primary text-xs py-2">Edit Filters</button>} />
-                ) : (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {recommendedJobs.map((job: any, i: number) => (
-                      <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
-                        <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </div>
         )}
 
-        {/* SEARCH */}
         {activeTab === "search" && (
           <div>
             <h2 className="text-xl font-extrabold text-gray-900 mb-5">Search Jobs</h2>
@@ -393,7 +324,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* SAVED */}
         {activeTab === "saved" && (
           <div>
             <div className="flex items-center justify-between mb-5">
@@ -411,14 +341,12 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* PREFERENCES / MY FILTERS */}
         {activeTab === "preferences" && (
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900 mb-2">My Filters</h2>
-            <p className="text-sm text-gray-400 mb-5">Manage your job filters. Jobs in "For You" are matched based on these.</p>
-
+            <h2 className="text-xl font-extrabold text-gray-900 mb-2">Preferences</h2>
+            <p className="text-sm text-gray-400 mb-5">Set your job preferences to get better recommendations in "For You"</p>
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-              <h3 className="text-sm font-bold text-gray-700 mb-4">Add New Filter</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-4">Add Preference</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="label">Job Title</label>
@@ -440,14 +368,13 @@ export default function DashboardPage() {
                 <div className="flex items-end">
                   <button onClick={addPref} disabled={!newTitle || !newCountry}
                     className="btn w-full py-2.5 text-[13px] bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                    + Add Filter
+                    + Add
                   </button>
                 </div>
               </div>
             </div>
-
             {preferences.length === 0 ? (
-              <EmptyState icon="⚙️" title="No filters set" subtitle="Add your ideal job title and country to get personalized recommendations" />
+              <EmptyState icon="⚙️" title="No preferences set" subtitle="Add your ideal job title and country to get personalized recommendations" />
             ) : (
               <div className="space-y-2.5">
                 {preferences.map((pref: any) => (
@@ -460,9 +387,7 @@ export default function DashboardPage() {
                         <p className="text-sm font-bold text-gray-800">{pref.job_title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs text-gray-400 font-medium">{pref.country}</span>
-                          {pref.remote_allowed && (
-                            <span className="badge bg-emerald-50 text-emerald-600">Remote OK</span>
-                          )}
+                          {pref.remote_allowed && <span className="badge bg-emerald-50 text-emerald-600">Remote OK</span>}
                         </div>
                       </div>
                     </div>
