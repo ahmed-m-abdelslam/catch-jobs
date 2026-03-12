@@ -5,7 +5,6 @@ import ssl
 
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
-# Configure SSL for Upstash Redis
 broker_use_ssl = None
 backend_use_ssl = None
 
@@ -32,6 +31,7 @@ celery_app.conf.update(
     enable_utc=True,
     worker_hijack_root_logger=False,
     broker_connection_retry_on_startup=True,
+    task_default_queue="celery",
 )
 
 if broker_use_ssl:
@@ -40,13 +40,11 @@ if broker_use_ssl:
         redis_backend_use_ssl=backend_use_ssl,
     )
 
-# Schedule scraping every 10 minutes
 scrape_interval = int(os.getenv("SCRAPE_INTERVAL_MINUTES", "10"))
 
 celery_app.conf.beat_schedule = {
     "scrape-all-jobs": {
         "task": "app.tasks.scrape_tasks.scrape_all_jobs",
         "schedule": scrape_interval * 60,
-        "options": {"queue": "default"},
     },
 }
