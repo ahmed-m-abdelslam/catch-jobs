@@ -5,20 +5,14 @@ import { api } from "@/lib/api";
 import JobCard from "@/components/JobCard";
 import Image from "next/image";
 
-type Tab = "recommended" | "search" | "saved" | "preferences";
+type Tab = "recommended" | "saved" | "preferences" | "all";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<Tab>("recommended");
   const [loading, setLoading] = useState(false);
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
-  const [searchJobs, setSearchJobs] = useState<any[]>([]);
-  const [searchText, setSearchText] = useState("");
-  const [filterCountry, setFilterCountry] = useState("");
-  const [filterSource, setFilterSource] = useState("");
-  const [filterDays, setFilterDays] = useState("");
-  const [countries, setCountries] = useState<{ name: string; count: number }[]>([]);
-  const [sources, setSources] = useState<{ name: string; count: number }[]>([]);
+  const [allJobs, setAllJobs] = useState<any[]>([]);
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [preferences, setPreferences] = useState<any[]>([]);
@@ -34,7 +28,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     api.getMe().then(setUser).catch(() => { window.location.href = "/login"; });
-    api.getFilters().then((f: any) => { setCountries(f.countries || []); setSources(f.sources || []); }).catch(() => {});
     api.getJobStats().then(setStats).catch(() => {});
     api.getSavedJobs().then((jobs: any[]) => { setSavedJobs(jobs); setSavedIds(new Set(jobs.map((j: any) => j.id))); }).catch(() => {});
     api.getPreferences().then(setPreferences).catch(() => {});
@@ -42,7 +35,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (activeTab === "recommended") loadRecommended();
-    if (activeTab === "search") { setCurrentPage(1); doSearch(1); }
+    if (activeTab === "all") { setCurrentPage(1); loadAllJobs(1); }
     if (activeTab === "saved") loadSaved();
     if (activeTab === "preferences") api.getPreferences().then(setPreferences);
   }, [activeTab]);
@@ -60,17 +53,10 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }
 
-  function doSearch(page: number = 1) {
+  function loadAllJobs(page: number = 1) {
     setLoading(true);
-    const params: Record<string, string> = {};
-    if (searchText) params.search = searchText;
-    if (filterCountry) params.country = filterCountry;
-    if (filterSource) params.source = filterSource;
-    if (filterDays) params.days = String(filterDays);
-    params.page = String(page);
-    params.page_size = String(pageSize);
-    api.getJobs(params).then((res: any) => {
-      setSearchJobs(res.jobs || []);
+    api.getJobs({ page: String(page), page_size: String(pageSize) }).then((res: any) => {
+      setAllJobs(res.jobs || []);
       setTotalPages(res.total_pages || 1);
       setTotalJobs(res.total || 0);
       setCurrentPage(res.page || 1);
@@ -80,16 +66,26 @@ export default function DashboardPage() {
   function goToPage(page: number) {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
-    doSearch(page);
+    loadAllJobs(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSave(id: string) {
     api.saveJob(id).then(() => {
       setSavedIds(prev => new Set(prev).add(id));
-      setSaveMsg("Job saved successfully!");
+      setSaveMsg("Job saved!");
       setTimeout(() => setSaveMsg(""), 2000);
     });
+  }
+
+  function handleUnsave(id: string) {
+    fetch(`/api/jobs/save/${id}/`, { method: "DELETE", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } })
+      .then(() => {
+        setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+        setSavedJobs(prev => prev.filter(j => j.id !== id));
+        setSaveMsg("Job removed from saved!");
+        setTimeout(() => setSaveMsg(""), 2000);
+      });
   }
 
   function addPref() {
@@ -102,16 +98,9 @@ export default function DashboardPage() {
     api.deletePreference(id).then(() => api.getPreferences().then(setPreferences));
   }
 
-  function clearFilters() {
-    setSearchText("");
-    setFilterCountry("");
-    setFilterSource("");
-    setFilterDays("");
-  }
-
   const tabs: { key: Tab; label: string; icon: string; count?: number }[] = [
     { key: "recommended", label: "For You", icon: "✨" },
-    { key: "search", label: "Search", icon: "🔍" },
+    { key: "all", label: "All Jobs", icon: "📋", count: totalJobs || (stats?.total_jobs) },
     { key: "saved", label: "Saved", icon: "💾", count: savedIds.size },
     { key: "preferences", label: "Preferences", icon: "⚙️" },
   ];
@@ -220,7 +209,7 @@ export default function DashboardPage() {
               {tab.count !== undefined && tab.count > 0 && (
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5 ${
                   activeTab === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
-                }`}>{tab.count}</span>
+                }`}>{tab.count > 999 ? `${(tab.count / 1000).toFixed(1)}k` : tab.count}</span>
               )}
             </button>
           ))}
@@ -233,13 +222,14 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900">Latest Jobs</h2>
-                <p className="text-sm text-gray-400 mt-0.5">Newest jobs added · Updated every 10 minutes</p>
+                <h2 className="text-xl font-extrabold text-gray-900">For You</h2>
+                <p className="text-sm text-gray-400 mt-0.5">Personalized recommendations based on your preferences</p>
               </div>
               <button onClick={loadRecommended} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
             </div>
             {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
-              <EmptyState icon="📭" title="No jobs yet" subtitle="Jobs are being collected. Check back soon!" />
+              <EmptyState icon="✨" title="No recommendations yet" subtitle="Add preferences to get personalized job recommendations"
+                action={<button onClick={() => setActiveTab("preferences")} className="btn btn-primary text-xs py-2">Set Preferences</button>} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {recommendedJobs.map((job: any, i: number) => (
@@ -252,67 +242,24 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {activeTab === "search" && (
+        {activeTab === "all" && (
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900 mb-5">Search Jobs</h2>
-            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-5">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div>
-                  <label className="label">Search</label>
-                  <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)}
-                    placeholder="Title or company..." className="input"
-                    onKeyDown={e => e.key === "Enter" && doSearch(1)} />
-                </div>
-                <div>
-                  <label className="label">Country</label>
-                  <select value={filterCountry} onChange={e => setFilterCountry(e.target.value)} className="input">
-                    <option value="">All Countries</option>
-                    {countries.map(c => <option key={c.name} value={c.name}>{c.name} ({c.count})</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Source</label>
-                  <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="input">
-                    <option value="">All Sources</option>
-                    {sources.map(s => <option key={s.name} value={s.name}>{s.name} ({s.count})</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Time Period</label>
-                  <select value={filterDays} onChange={e => setFilterDays(e.target.value)} className="input">
-                    <option value="">Any Time</option>
-                    <option value="1">24 Hours</option>
-                    <option value="2">2 Days</option>
-                    <option value="3">3 Days</option>
-                    <option value="7">1 Week</option>
-                    <option value="14">2 Weeks</option>
-                    <option value="30">1 Month</option>
-                  </select>
-                </div>
-                <div className="flex items-end gap-2">
-                  <button onClick={() => { setCurrentPage(1); doSearch(1); }} className="btn btn-primary flex-1 py-2.5 text-[13px]">Search</button>
-                  <button onClick={() => { clearFilters(); setTimeout(() => doSearch(1), 50); }} className="btn btn-outline py-2.5 text-[13px]">Clear</button>
-                </div>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900">All Jobs</h2>
+                <p className="text-sm text-gray-400 mt-0.5">All available jobs · Newest first</p>
               </div>
-              {(filterCountry || filterSource || filterDays || searchText) && (
-                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
-                  <span className="text-[11px] text-gray-400 self-center font-medium">Filters:</span>
-                  {searchText && <span className="chip bg-blue-50 text-blue-600">🔍 {searchText}</span>}
-                  {filterCountry && <span className="chip bg-emerald-50 text-emerald-600">🌍 {filterCountry}</span>}
-                  {filterSource && <span className="chip bg-violet-50 text-violet-600">📡 {filterSource}</span>}
-                  {filterDays && <span className="chip bg-amber-50 text-amber-600">🕐 {filterDays}d</span>}
-                </div>
-              )}
+              <button onClick={() => loadAllJobs(1)} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
             </div>
-            {loading ? <Spinner /> : searchJobs.length === 0 ? (
-              <EmptyState icon="🔍" title="No jobs found" subtitle="Try adjusting your filters or search terms" />
+            {loading ? <Spinner /> : allJobs.length === 0 ? (
+              <EmptyState icon="📋" title="No jobs available" subtitle="Jobs are being collected. Check back soon!" />
             ) : (
               <div>
                 <p className="text-sm text-gray-400 mb-4 font-medium">
-                  Showing <strong className="text-gray-700">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong className="text-gray-700">{totalJobs.toLocaleString()}</strong> results
+                  Showing <strong className="text-gray-700">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong className="text-gray-700">{totalJobs.toLocaleString()}</strong> jobs
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {searchJobs.map((job: any, i: number) => (
+                  {allJobs.map((job: any, i: number) => (
                     <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
                       <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
                     </div>
@@ -332,10 +279,19 @@ export default function DashboardPage() {
             </div>
             {loading ? <Spinner /> : savedJobs.length === 0 ? (
               <EmptyState icon="💾" title="No saved jobs" subtitle="Save jobs you're interested in to find them here"
-                action={<button onClick={() => setActiveTab("search")} className="btn btn-primary text-xs py-2">Browse Jobs</button>} />
+                action={<button onClick={() => setActiveTab("all")} className="btn btn-primary text-xs py-2">Browse All Jobs</button>} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {savedJobs.map((job: any) => <JobCard key={job.id} job={job} saved={true} />)}
+                {savedJobs.map((job: any) => (
+                  <div key={job.id} className="relative">
+                    <JobCard job={job} saved={true} />
+                    <button onClick={() => handleUnsave(job.id)}
+                      className="absolute top-3 right-3 w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 rounded-full flex items-center justify-center transition-all shadow-sm"
+                      title="Remove from saved">
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
