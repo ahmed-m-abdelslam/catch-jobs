@@ -10,11 +10,15 @@ import jwt
 from app.database import get_db
 from app.config import get_settings
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, VerifyCode, ResendCode
+from app.services.email_service import send_verification_email, verify_code, get_pending_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
 settings = get_settings()
+
+# Temporary store for pending registrations (password included)
+pending_registrations: dict = {}
 
 
 def hash_password(password: str) -> str:
@@ -51,23 +55,78 @@ async def get_current_user(
     return user
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post("/register")
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
+    # Check if email already registered
     existing = await db.execute(select(User).where(User.email == data.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Store password temporarily and send verification code
+    try:
+        send_verification_email(data.email, data.full_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {str(e)}")
+
+    # Save registration data temporarily
+    pending_registrations[data.email] = {
+        "password": data.password,
+        "full_name": data.full_name,
+        "expires": datetime.utcnow() + timedelta(minutes=10),
+    }
+
+    return {"message": "Verification code sent to your email", "email": data.email}
+
+
+@router.post("/verify-code", response_model=TokenResponse)
+async def verify_email_code(data: VerifyCode, db: AsyncSession = Depends(get_db)):
+    # Check if code is valid
+    if not verify_code(data.email, data.code):
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+    # Get pending registration data
+    reg_data = pending_registrations.get(data.email)
+    if not reg_data or datetime.utcnow() > reg_data["expires"]:
+        if data.email in pending_registrations:
+            del pending_registrations[data.email]
+        raise HTTPException(status_code=400, detail="Registration expired. Please register again.")
+
+    # Check again if email exists (race condition protection)
+    existing = await db.execute(select(User).where(User.email == data.email))
+    if existing.scalar_one_or_none():
+        del pending_registrations[data.email]
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Create user
     user = User(
         email=data.email,
-        password_hash=hash_password(data.password),
-        full_name=data.full_name,
+        password_hash=hash_password(reg_data["password"]),
+        full_name=reg_data["full_name"],
         auth_provider="local",
     )
     db.add(user)
     await db.flush()
 
+    # Cleanup
+    del pending_registrations[data.email]
+
     token = create_access_token(user.id)
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
+
+
+@router.post("/resend-code")
+async def resend_code(data: ResendCode):
+    reg_data = pending_registrations.get(data.email)
+    if not reg_data:
+        raise HTTPException(status_code=400, detail="No pending registration found")
+
+    try:
+        send_verification_email(data.email, reg_data["full_name"])
+        reg_data["expires"] = datetime.utcnow() + timedelta(minutes=10)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
+    return {"message": "New verification code sent"}
 
 
 @router.post("/login", response_model=TokenResponse)

@@ -24,6 +24,26 @@ class ApiClient {
     return res.json();
   }
 
+  async verifyCode(email: string, code: string) {
+    const res = await fetch(`${API_URL}/auth/verify-code`, {
+      method: "POST",
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ email, code }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Verification failed");
+    return res.json();
+  }
+
+  async resendCode(email: string) {
+    const res = await fetch(`${API_URL}/auth/resend-code`, {
+      method: "POST",
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Failed to resend");
+    return res.json();
+  }
+
   async login(email: string, password: string) {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",

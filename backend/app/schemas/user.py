@@ -14,6 +14,15 @@ class UserLogin(BaseModel):
     password: str
 
 
+class VerifyCode(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResendCode(BaseModel):
+    email: EmailStr
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
