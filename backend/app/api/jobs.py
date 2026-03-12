@@ -136,7 +136,7 @@ async def get_saved_jobs(
     return [JobResponse.model_validate(j) for j in jobs]
 
 
-@router.get("/", response_model=list[JobResponse])
+@router.get("/")
 async def list_jobs(
     country: str | None = Query(default=None),
     source: str | None = Query(default=None),
@@ -172,7 +172,15 @@ async def list_jobs(
     result = await db.execute(query)
     jobs = result.scalars().all()
 
-    return jobs
+    total_pages = (total + page_size - 1) // page_size if total else 1
+
+    return {
+        "jobs": [JobResponse.model_validate(j) for j in jobs],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
 
 
 @router.get("/{job_id}", response_model=JobResponse)

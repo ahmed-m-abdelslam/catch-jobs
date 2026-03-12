@@ -28,6 +28,12 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [saveMsg, setSaveMsg] = useState("");
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const pageSize = 20;
+
   useEffect(() => {
     api.getMe().then(setUser).catch(() => { window.location.href = "/login"; });
     api.getFilters().then((f: any) => { setCountries(f.countries || []); setSources(f.sources || []); }).catch(() => {});
@@ -37,7 +43,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (activeTab === "recommended") loadRecommended();
-    if (activeTab === "search") doSearch();
+    if (activeTab === "search") { setCurrentPage(1); doSearch(1); }
     if (activeTab === "saved") loadSaved();
     if (activeTab === "preferences") api.getPreferences().then(setPreferences);
   }, [activeTab]);
@@ -55,14 +61,28 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }
 
-  function doSearch() {
+  function doSearch(page: number = 1) {
     setLoading(true);
     const params: Record<string, string> = {};
     if (searchText) params.search = searchText;
     if (filterCountry) params.country = filterCountry;
     if (filterSource) params.source = filterSource;
     if (filterDays) params.days = String(filterDays);
-    api.getJobs(params).then(setSearchJobs).finally(() => setLoading(false));
+    params.page = String(page);
+    params.page_size = String(pageSize);
+    api.getJobs(params).then((res: any) => {
+      setSearchJobs(res.jobs || []);
+      setTotalPages(res.total_pages || 1);
+      setTotalJobs(res.total || 0);
+      setCurrentPage(res.page || 1);
+    }).finally(() => setLoading(false));
+  }
+
+  function goToPage(page: number) {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    doSearch(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSave(id: string) {
@@ -113,16 +133,62 @@ export default function DashboardPage() {
     </div>
   );
 
+  function renderPagination() {
+    if (totalPages <= 1) return null;
+
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-8 mb-4">
+        <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
+          className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+          ← Prev
+        </button>
+
+        {pages.map((p, i) =>
+          typeof p === "string" ? (
+            <span key={`dots-${i}`} className="px-2 text-gray-400">...</span>
+          ) : (
+            <button key={p} onClick={() => goToPage(p)}
+              className={`w-10 h-10 text-sm font-semibold rounded-lg transition ${
+                p === currentPage
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}>
+              {p}
+            </button>
+          )
+        )}
+
+        <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}
+          className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+          Next →
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-[#f1f5f9]">
-      {/* Toast */}
       {saveMsg && (
-        <div className="fixed top-4 right-4 z-[100] bg-emerald-600 text-white px-5 py-3 rounded-xl text-sm font-medium shadow-lg animate-fade-up">
+        <div className="fixed top-4 right-4 z-[100] bg-emerald-600 text-white px-5 py-3 rounded-xl text-sm font-medium shadow-lg">
           ✓ {saveMsg}
         </div>
       )}
 
-      {/* Header */}
       <header className="glass-header sticky top-0 z-50 border-b border-gray-200/60 w-full">
         <div className="w-full px-5 sm:px-8 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -153,15 +219,12 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="w-full px-5 sm:px-8 pt-5 pb-2">
         <div className="inline-flex gap-1 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                activeTab === tab.key
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                activeTab === tab.key ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}>
               <span className="text-[13px]">{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>
@@ -175,7 +238,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="w-full px-5 sm:px-8 py-5">
 
         {/* RECOMMENDED */}
@@ -184,11 +246,9 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-xl font-extrabold text-gray-900">Recommended for You</h2>
-                <p className="text-sm text-gray-400 mt-0.5">Matched to your preferences</p>
+                <p className="text-sm text-gray-400 mt-0.5">Matched to your preferences · Latest first</p>
               </div>
-              <button onClick={loadRecommended} className="btn btn-outline text-xs py-2 px-4">
-                ↻ Refresh
-              </button>
+              <button onClick={loadRecommended} className="btn btn-outline text-xs py-2 px-4">↻ Refresh</button>
             </div>
             {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
               <EmptyState icon="🎯" title="No recommendations yet" subtitle="Set your job preferences to get matched"
@@ -210,14 +270,13 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl font-extrabold text-gray-900 mb-5">Search Jobs</h2>
 
-            {/* Filters */}
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-5">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
                   <label className="label">Search</label>
                   <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)}
                     placeholder="Title or company..." className="input"
-                    onKeyDown={e => e.key === "Enter" && doSearch()} />
+                    onKeyDown={e => e.key === "Enter" && doSearch(1)} />
                 </div>
                 <div>
                   <label className="label">Country</label>
@@ -235,7 +294,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <label className="label">Time Period</label>
-                  <select value={filterDays || ""} onChange={e => setFilterDays(e.target.value)} className="input">
+                  <select value={filterDays} onChange={e => setFilterDays(e.target.value)} className="input">
                     <option value="">Any Time</option>
                     <option value="1">24 Hours</option>
                     <option value="2">2 Days</option>
@@ -246,8 +305,8 @@ export default function DashboardPage() {
                   </select>
                 </div>
                 <div className="flex items-end gap-2">
-                  <button onClick={doSearch} className="btn btn-primary flex-1 py-2.5 text-[13px]">Search</button>
-                  <button onClick={() => { clearFilters(); setTimeout(doSearch, 50); }} className="btn btn-outline py-2.5 text-[13px]">Clear</button>
+                  <button onClick={() => { setCurrentPage(1); doSearch(1); }} className="btn btn-primary flex-1 py-2.5 text-[13px]">Search</button>
+                  <button onClick={() => { clearFilters(); setTimeout(() => doSearch(1), 50); }} className="btn btn-outline py-2.5 text-[13px]">Clear</button>
                 </div>
               </div>
 
@@ -262,13 +321,12 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Results */}
             {loading ? <Spinner /> : searchJobs.length === 0 ? (
               <EmptyState icon="🔍" title="No jobs found" subtitle="Try adjusting your filters or search terms" />
             ) : (
               <div>
                 <p className="text-sm text-gray-400 mb-4 font-medium">
-                  Showing <strong className="text-gray-700">{searchJobs.length}</strong> results
+                  Showing <strong className="text-gray-700">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong className="text-gray-700">{totalJobs.toLocaleString()}</strong> results
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {searchJobs.map((job: any, i: number) => (
@@ -277,6 +335,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
+                {renderPagination()}
               </div>
             )}
           </div>
@@ -304,8 +363,6 @@ export default function DashboardPage() {
         {activeTab === "preferences" && (
           <div>
             <h2 className="text-xl font-extrabold text-gray-900 mb-5">Job Preferences</h2>
-
-            {/* Add Form */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
               <h3 className="text-sm font-bold text-gray-700 mb-4">Add New Preference</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -334,7 +391,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* List */}
             {preferences.length === 0 ? (
               <EmptyState icon="⚙️" title="No preferences set" subtitle="Add your ideal job title and country to get recommendations" />
             ) : (
