@@ -50,7 +50,6 @@ export default function DashboardPage() {
   }, [activeTab]);
 
   function loadRecommended() {
-    if (preferences.length === 0) return;
     setLoading(true);
     api.getRecommended(30).then(setRecommendedJobs).finally(() => setLoading(false));
   }
@@ -103,10 +102,12 @@ export default function DashboardPage() {
         setNewCountry("");
         api.getPreferences().then((prefs: any[]) => {
           setPreferences(prefs);
-          // Auto-switch to recommended after first preference
-          if (prefs.length === 1) {
+          // Load recommended directly then switch tab
+          setLoading(true);
+          api.getRecommended(30).then((jobs: any[]) => {
+            setRecommendedJobs(jobs);
             setActiveTab("recommended");
-          }
+          }).finally(() => setLoading(false));
         });
       });
   }
