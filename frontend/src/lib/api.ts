@@ -47,8 +47,8 @@ class ApiClient {
     return res.json();
   }
 
-  async getRecommended() {
-    const res = await fetch(`${API_URL}/jobs/recommended`, { headers: this.getHeaders() });
+  async getRecommended(limit: number = 20) {
+    const res = await fetch(`${API_URL}/jobs/recommended?limit=${limit}`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch recommended");
     return res.json();
   }
