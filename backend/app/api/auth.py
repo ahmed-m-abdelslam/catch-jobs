@@ -54,7 +54,7 @@ async def get_current_user(
     return user
 
 
-@router.post("/register")
+@router.post("/register/")
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == data.email))
     if existing.scalar_one_or_none():
@@ -74,7 +74,7 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     return {"message": "Verification code sent to your email", "email": data.email}
 
 
-@router.post("/verify-code", response_model=TokenResponse)
+@router.post("/verify-code/", response_model=TokenResponse)
 async def verify_email_code(data: VerifyCode, db: AsyncSession = Depends(get_db)):
     if not verify_code(data.email, data.code):
         raise HTTPException(status_code=400, detail="Invalid or expired verification code")
@@ -105,7 +105,7 @@ async def verify_email_code(data: VerifyCode, db: AsyncSession = Depends(get_db)
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
 
 
-@router.post("/resend-code")
+@router.post("/resend-code/")
 async def resend_code(data: ResendCode):
     reg_data = pending_registrations.get(data.email)
     if not reg_data:
@@ -120,7 +120,7 @@ async def resend_code(data: ResendCode):
     return {"message": "New verification code sent"}
 
 
-@router.post("/forgot-password")
+@router.post("/forgot-password/")
 async def forgot_password(data: ForgotPassword, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
@@ -136,7 +136,7 @@ async def forgot_password(data: ForgotPassword, db: AsyncSession = Depends(get_d
     return {"message": "If this email exists, a reset code has been sent"}
 
 
-@router.post("/reset-password")
+@router.post("/reset-password/")
 async def reset_password(data: ResetPassword, db: AsyncSession = Depends(get_db)):
     if not verify_reset_code(data.email, data.code):
         raise HTTPException(status_code=400, detail="Invalid or expired reset code")
@@ -153,7 +153,7 @@ async def reset_password(data: ResetPassword, db: AsyncSession = Depends(get_db)
     return {"message": "Password reset successfully"}
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login/", response_model=TokenResponse)
 async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
@@ -166,6 +166,6 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me/", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)

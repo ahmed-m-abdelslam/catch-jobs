@@ -35,7 +35,7 @@ async def create_preference(
     return PreferenceResponse.model_validate(pref)
 
 
-@router.put("/{pref_id}", response_model=PreferenceResponse)
+@router.put("/{pref_id}/", response_model=PreferenceResponse)
 async def update_preference(
     pref_id: uuid.UUID,
     data: PreferenceUpdate,
@@ -58,7 +58,7 @@ async def update_preference(
     return PreferenceResponse.model_validate(pref)
 
 
-@router.delete("/{pref_id}")
+@router.delete("/{pref_id}/")
 async def delete_preference(
     pref_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
