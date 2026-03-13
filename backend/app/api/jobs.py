@@ -15,7 +15,7 @@ from app.schemas.job import JobResponse
 router = APIRouter(prefix="/jobs", tags=["Jobs"], redirect_slashes=False)
 
 
-@router.get("/stats/")
+@router.get("/stats")
 async def get_stats(db: AsyncSession = Depends(get_db)):
     source_result = await db.execute(
         select(Job.source, func.count(Job.id)).group_by(Job.source)
@@ -41,7 +41,7 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get("/filters/")
+@router.get("/filters")
 async def get_available_filters(db: AsyncSession = Depends(get_db)):
     """Get all available filter options."""
     # Countries
@@ -67,7 +67,7 @@ async def get_available_filters(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get("/recommended/", response_model=list[JobResponse])
+@router.get("/recommended", response_model=list[JobResponse])
 async def get_recommended(
     limit: int = Query(default=20, le=100),
     current_user: User = Depends(get_current_user),
@@ -121,7 +121,7 @@ async def get_recommended(
     return [JobResponse.model_validate(j) for j in all_jobs[:limit]]
 
 
-@router.get("/saved/", response_model=list[JobResponse])
+@router.get("/saved", response_model=list[JobResponse])
 async def get_saved_jobs(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -183,7 +183,7 @@ async def list_jobs(
     }
 
 
-@router.get("/{job_id}/", response_model=JobResponse)
+@router.get("/{job_id}", response_model=JobResponse)
 async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Job).where(Job.id == job_id))
     job = result.scalar_one_or_none()
@@ -192,7 +192,7 @@ async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     return JobResponse.model_validate(job)
 
 
-@router.post("/save/{job_id}/")
+@router.post("/save/{job_id}")
 async def save_job(
     job_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
@@ -209,7 +209,7 @@ async def save_job(
     return {"detail": "Job saved"}
 
 
-@router.delete("/save/{job_id}/")
+@router.delete("/save/{job_id}")
 async def unsave_job(
     job_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
