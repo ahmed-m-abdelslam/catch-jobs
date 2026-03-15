@@ -263,26 +263,26 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       {stats && activeTab === "recommended" && (
-        <div className="w-full px-5 sm:px-8 pt-5">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-              <p className="text-2xl font-extrabold" style={{ color: "var(--primary)" }}>{stats.total_jobs.toLocaleString()}</p>
-              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Total Jobs</p>
-            </div>
-            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-              <p className="text-2xl font-extrabold" style={{ color: "var(--success)" }}>{Object.keys(stats.by_source || {}).length}</p>
-              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Sources</p>
-            </div>
-            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-              <p className="text-2xl font-extrabold" style={{ color: "#8b5cf6" }}>{Object.keys(stats.by_country || {}).length}</p>
-              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Countries</p>
-            </div>
-            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-              <p className="text-2xl font-extrabold" style={{ color: "#f59e0b" }}>{savedIds.size}</p>
-              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Saved Jobs</p>
-            </div>
-          </div>
-        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       )}
 
       <div className="w-full px-5 sm:px-8 pt-5 pb-2">
