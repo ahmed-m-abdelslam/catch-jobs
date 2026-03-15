@@ -190,9 +190,9 @@ async def run_scraping_pipeline(
                     print(f"  Generated {i + 1}/{len(new_jobs)} embeddings")
                     await db.flush()  # Flush periodically
 
-                # Rate limit for OpenAI API
-                if (i + 1) % 100 == 0:
-                    await asyncio.sleep(1)
+
+
+
 
             except Exception as e:
                 embedding_errors += 1

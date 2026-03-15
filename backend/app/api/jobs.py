@@ -73,6 +73,8 @@ async def get_recommended(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.services.matching import get_recommended_jobs_for_user
+
     result = await db.execute(
         select(UserPreference).where(UserPreference.user_id == current_user.id)
     )
@@ -85,6 +87,15 @@ async def get_recommended(
         jobs = result.scalars().all()
         return [JobResponse.model_validate(j) for j in jobs]
 
+    # Try AI-powered matching first
+    try:
+        ai_jobs = await get_recommended_jobs_for_user(current_user.id, db, limit)
+        if ai_jobs:
+            return [JobResponse(**job) for job in ai_jobs]
+    except Exception as e:
+        print(f"AI matching failed, falling back to keyword matching: {e}")
+
+    # Fallback: keyword matching
     all_jobs = []
     seen_ids = set()
 

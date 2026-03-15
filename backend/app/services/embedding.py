@@ -1,21 +1,27 @@
-import openai
-from app.config import get_settings
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
-settings = get_settings()
-client = openai.OpenAI(api_key=settings.openai_api_key)
+# Load model once at startup (384 dimensions, ~80MB)
+_model = None
+
+def _get_model():
+    global _model
+    if _model is None:
+        print("Loading sentence-transformers model...")
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+        print("Model loaded!")
+    return _model
 
 
 def generate_embedding(text: str) -> list[float]:
-    """Generate a 1536-dimensional embedding using OpenAI's text-embedding-3-small."""
+    """Generate a 384-dimensional embedding using sentence-transformers."""
     text = text.replace("\n", " ").strip()
     if not text:
-        return [0.0] * 1536
+        return [0.0] * 384
 
-    response = client.embeddings.create(
-        input=text,
-        model="text-embedding-3-small",
-    )
-    return response.data[0].embedding
+    model = _get_model()
+    embedding = model.encode(text, normalize_embeddings=True)
+    return embedding.tolist()
 
 
 def generate_embedding_for_job(title: str, company: str | None, description: str | None) -> list[float]:
@@ -24,8 +30,7 @@ def generate_embedding_for_job(title: str, company: str | None, description: str
     if company:
         parts.append(f"Company: {company}")
     if description:
-        # Truncate to ~8000 chars to stay within token limits
-        parts.append(f"Description: {description[:8000]}")
+        parts.append(f"Description: {description[:2000]}")
     text = "\n".join(parts)
     return generate_embedding(text)
 
