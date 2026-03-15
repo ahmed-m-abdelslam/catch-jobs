@@ -94,6 +94,7 @@ async def get_recommended(
             return [JobResponse(**job) for job in ai_jobs]
     except Exception as e:
         print(f"AI matching failed, falling back to keyword matching: {e}")
+        await db.rollback()
 
     # Fallback: keyword matching
     all_jobs = []
