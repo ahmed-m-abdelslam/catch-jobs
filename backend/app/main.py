@@ -60,6 +60,8 @@ app.include_router(preferences_router, prefix="/api")
 try:
     from app.api.admin import router as admin_router
     app.include_router(admin_router, prefix="/api")
+    from app.api.backfill import router as backfill_router
+    app.include_router(backfill_router, prefix="/api")
 except ImportError:
     pass
 
