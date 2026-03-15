@@ -80,11 +80,11 @@ export default function DashboardPage() {
   }
 
   function handleUnsave(id: string) {
-    fetch(`/api/jobs/save/${id}/`, { method: "DELETE", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } })
+    fetch(`/api/jobs/save/${id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } })
       .then(() => {
         setSavedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
         setSavedJobs(prev => prev.filter(j => j.id !== id));
-        setSaveMsg("Job removed from saved!");
+        setSaveMsg("Job removed!");
         setTimeout(() => setSaveMsg(""), 2000);
       });
   }
@@ -108,16 +108,16 @@ export default function DashboardPage() {
 
   const Spinner = () => (
     <div className="flex flex-col items-center justify-center py-24">
-      <div className="w-10 h-10 border-[3px] border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-sm text-gray-400">Loading jobs...</p>
+      <div className="w-10 h-10 border-[3px] border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }}></div>
+      <p className="text-sm" style={{ color: "var(--text-muted)" }}>Loading jobs...</p>
     </div>
   );
 
   const EmptyState = ({ icon, title, subtitle, action }: { icon: string; title: string; subtitle: string; action?: React.ReactNode }) => (
-    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100">
+    <div className="flex flex-col items-center justify-center py-24 rounded-2xl" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
       <span className="text-5xl mb-4">{icon}</span>
-      <p className="text-lg font-semibold text-gray-700 mb-1">{title}</p>
-      <p className="text-sm text-gray-400 mb-4">{subtitle}</p>
+      <p className="text-lg font-semibold mb-1" style={{ color: "var(--text)" }}>{title}</p>
+      <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
       {action}
     </div>
   );
@@ -139,21 +139,25 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center gap-2 mt-8 mb-4">
         <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}
-          className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+          className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition"
+          style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text-light)" }}>
           ← Prev
         </button>
         {pages.map((p, i) =>
           typeof p === "string" ? (
-            <span key={`dots-${i}`} className="px-2 text-gray-400">...</span>
+            <span key={`dots-${i}`} className="px-2" style={{ color: "var(--text-muted)" }}>...</span>
           ) : (
             <button key={p} onClick={() => goToPage(p)}
-              className={`w-10 h-10 text-sm font-semibold rounded-lg transition ${
-                p === currentPage ? "bg-blue-600 text-white shadow-sm" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-              }`}>{p}</button>
+              className="w-10 h-10 text-sm font-semibold rounded-lg transition"
+              style={p === currentPage
+                ? { background: "var(--primary)", color: "white" }
+                : { background: "var(--card)", border: "1px solid var(--border)", color: "var(--text-light)" }
+              }>{p}</button>
           )
         )}
         <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}
-          className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+          className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition"
+          style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text-light)" }}>
           Next →
         </button>
       </div>
@@ -161,21 +165,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#f1f5f9]">
+    <div className="min-h-screen w-full" style={{ background: "var(--bg)" }}>
       {saveMsg && (
-        <div className="fixed top-4 right-4 z-[100] bg-emerald-600 text-white px-5 py-3 rounded-xl text-sm font-medium shadow-lg">
+        <div className="fixed top-4 right-4 z-[100] px-5 py-3 rounded-xl text-sm font-medium shadow-lg"
+          style={{ background: "var(--success)", color: "white" }}>
           ✓ {saveMsg}
         </div>
       )}
 
-      <header className="glass-header sticky top-0 z-50 border-b border-gray-200/60 w-full">
+      <header className="glass-header sticky top-0 z-50 w-full" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="w-full px-5 sm:px-8 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Catch Jobs" width={36} height={36} className="rounded-lg" />
             <div>
               <h1 className="text-lg font-extrabold gradient-text leading-tight">Catch Jobs</h1>
               {stats && (
-                <p className="text-[11px] text-gray-400 font-medium">
+                <p className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
                   {stats.total_jobs.toLocaleString()} jobs · {Object.keys(stats.by_source || {}).length} sources
                 </p>
               )}
@@ -183,16 +188,17 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             {user && (
-              <div className="hidden sm:flex items-center gap-2.5 bg-gray-50 rounded-full px-3 py-1.5">
+              <div className="hidden sm:flex items-center gap-2.5 rounded-full px-3 py-1.5" style={{ background: "var(--hover-bg)" }}>
                 <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">{user.full_name?.[0]?.toUpperCase()}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">{user.full_name}</span>
+                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{user.full_name}</span>
               </div>
             )}
             <ThemeToggle />
             <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
-              className="text-xs text-gray-400 hover:text-red-500 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+              style={{ color: "var(--text-muted)" }}>
               Logout
             </button>
           </div>
@@ -200,18 +206,22 @@ export default function DashboardPage() {
       </header>
 
       <div className="w-full px-5 sm:px-8 pt-5 pb-2">
-        <div className="inline-flex gap-1 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
+        <div className="inline-flex gap-1 p-1 rounded-xl shadow-sm" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                activeTab === tab.key ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}>
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+              style={activeTab === tab.key
+                ? { background: "var(--primary)", color: "white" }
+                : { color: "var(--text-light)" }
+              }>
               <span className="text-[13px]">{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>
               {tab.count !== undefined && tab.count > 0 && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5 ${
-                  activeTab === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
-                }`}>{tab.count > 999 ? `${(tab.count / 1000).toFixed(1)}k` : tab.count}</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5"
+                  style={activeTab === tab.key
+                    ? { background: "rgba(255,255,255,0.2)", color: "white" }
+                    : { background: "var(--hover-bg)", color: "var(--text-muted)" }
+                  }>{tab.count > 999 ? `${(tab.count / 1000).toFixed(1)}k` : tab.count}</span>
               )}
             </button>
           ))}
@@ -224,8 +234,8 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900">For You</h2>
-                <p className="text-sm text-gray-400 mt-0.5">Personalized recommendations based on your preferences</p>
+                <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>For You</h2>
+                <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>Personalized recommendations based on your preferences</p>
               </div>
               <button onClick={loadRecommended} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
             </div>
@@ -248,8 +258,8 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900">All Jobs</h2>
-                <p className="text-sm text-gray-400 mt-0.5">All available jobs · Newest first</p>
+                <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>All Jobs</h2>
+                <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>All available jobs · Newest first</p>
               </div>
               <button onClick={() => loadAllJobs(1)} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
             </div>
@@ -257,8 +267,8 @@ export default function DashboardPage() {
               <EmptyState icon="📋" title="No jobs available" subtitle="Jobs are being collected. Check back soon!" />
             ) : (
               <div>
-                <p className="text-sm text-gray-400 mb-4 font-medium">
-                  Showing <strong className="text-gray-700">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong className="text-gray-700">{totalJobs.toLocaleString()}</strong> jobs
+                <p className="text-sm mb-4 font-medium" style={{ color: "var(--text-muted)" }}>
+                  Showing <strong style={{ color: "var(--text)" }}>{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong style={{ color: "var(--text)" }}>{totalJobs.toLocaleString()}</strong> jobs
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {allJobs.map((job: any, i: number) => (
@@ -276,8 +286,8 @@ export default function DashboardPage() {
         {activeTab === "saved" && (
           <div>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-extrabold text-gray-900">Saved Jobs</h2>
-              {savedJobs.length > 0 && <span className="text-sm text-gray-400 font-medium">{savedJobs.length} saved</span>}
+              <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>Saved Jobs</h2>
+              {savedJobs.length > 0 && <span className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>{savedJobs.length} saved</span>}
             </div>
             {loading ? <Spinner /> : savedJobs.length === 0 ? (
               <EmptyState icon="💾" title="No saved jobs" subtitle="Save jobs you're interested in to find them here"
@@ -288,7 +298,8 @@ export default function DashboardPage() {
                   <div key={job.id} className="relative">
                     <JobCard job={job} saved={true} />
                     <button onClick={() => handleUnsave(job.id)}
-                      className="absolute top-3 right-3 w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 rounded-full flex items-center justify-center transition-all shadow-sm"
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm"
+                      style={{ background: "var(--danger)", color: "white" }}
                       title="Remove from saved">
                       ✕
                     </button>
@@ -301,10 +312,10 @@ export default function DashboardPage() {
 
         {activeTab === "preferences" && (
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900 mb-2">Preferences</h2>
-            <p className="text-sm text-gray-400 mb-5">Set your job preferences to get better recommendations in "For You"</p>
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-              <h3 className="text-sm font-bold text-gray-700 mb-4">Add Preference</h3>
+            <h2 className="text-xl font-extrabold mb-2" style={{ color: "var(--text)" }}>Preferences</h2>
+            <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>Set your job preferences to get better recommendations in "For You"</p>
+            <div className="rounded-xl shadow-sm p-6 mb-6" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>Add Preference</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="label">Job Title</label>
@@ -317,15 +328,16 @@ export default function DashboardPage() {
                     placeholder="e.g. Egypt" className="input" />
                 </div>
                 <div className="flex items-end">
-                  <label className="flex items-center gap-2.5 text-sm text-gray-600 font-medium cursor-pointer">
+                  <label className="flex items-center gap-2.5 text-sm font-medium cursor-pointer" style={{ color: "var(--text-light)" }}>
                     <input type="checkbox" checked={newRemote} onChange={e => setNewRemote(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+                      className="w-4 h-4 rounded" />
                     Include Remote
                   </label>
                 </div>
                 <div className="flex items-end">
                   <button onClick={addPref} disabled={!newTitle || !newCountry}
-                    className="btn w-full py-2.5 text-[13px] bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                    className="btn w-full py-2.5 text-[13px] disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: "var(--success)", color: "white" }}>
                     + Add
                   </button>
                 </div>
@@ -338,19 +350,20 @@ export default function DashboardPage() {
                 {preferences.map((pref: any) => (
                   <div key={pref.id} className="card p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--hover-bg)" }}>
                         <span className="text-lg">🎯</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-800">{pref.job_title}</p>
+                        <p className="text-sm font-bold" style={{ color: "var(--text)" }}>{pref.job_title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-400 font-medium">{pref.country}</span>
-                          {pref.remote_allowed && <span className="badge bg-emerald-50 text-emerald-600">Remote OK</span>}
+                          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{pref.country}</span>
+                          {pref.remote_allowed && <span className="badge" style={{ background: "var(--hover-bg)", color: "var(--success)" }}>Remote OK</span>}
                         </div>
                       </div>
                     </div>
                     <button onClick={() => delPref(pref.id)}
-                      className="text-xs text-gray-400 hover:text-red-500 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                      style={{ color: "var(--danger)" }}>
                       Remove
                     </button>
                   </div>

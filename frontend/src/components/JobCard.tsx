@@ -13,12 +13,12 @@ interface Job {
   created_at: string;
 }
 
-const sourceConfig: Record<string, { bg: string; text: string; label: string }> = {
-  remoteok:  { bg: "bg-emerald-50", text: "text-emerald-700", label: "RemoteOK" },
-  wuzzuf:    { bg: "bg-blue-50",    text: "text-blue-700",    label: "Wuzzuf" },
-  linkedin:  { bg: "bg-sky-50",     text: "text-sky-700",     label: "LinkedIn" },
-  arbeitnow: { bg: "bg-violet-50",  text: "text-violet-700",  label: "Arbeitnow" },
-  jobicy:    { bg: "bg-amber-50",   text: "text-amber-700",   label: "Jobicy" },
+const sourceConfig: Record<string, { label: string; emoji: string }> = {
+  remoteok:  { label: "RemoteOK", emoji: "🟢" },
+  wuzzuf:    { label: "Wuzzuf", emoji: "🔵" },
+  linkedin:  { label: "LinkedIn", emoji: "🔷" },
+  arbeitnow: { label: "Arbeitnow", emoji: "🟣" },
+  jobicy:    { label: "Jobicy", emoji: "🟠" },
 };
 
 function timeAgo(dateStr: string): string {
@@ -35,81 +35,67 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id: string) => void; saved?: boolean }) {
-  const src = sourceConfig[job.source] || { bg: "bg-gray-50", text: "text-gray-600", label: job.source };
+  const src = sourceConfig[job.source] || { label: job.source, emoji: "⚪" };
 
   return (
     <div className="card p-5 flex flex-col justify-between animate-fade-up">
-      {/* Top Section */}
       <div>
-        {/* Source + Time */}
         <div className="flex items-center justify-between mb-3">
-          <span className={`badge ${src.bg} ${src.text}`}>{src.label}</span>
-          <span className="text-xs text-gray-400 font-medium">{timeAgo(job.created_at)}</span>
+          <span className="badge" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
+            {src.emoji} {src.label}
+          </span>
+          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{timeAgo(job.created_at)}</span>
         </div>
 
-        {/* Title */}
-        <h3 className="text-[15px] font-bold text-gray-900 leading-snug mb-2 line-clamp-2">
+        <h3 className="text-[15px] font-bold leading-snug mb-2 line-clamp-2" style={{ color: "var(--text)" }}>
           {job.title}
         </h3>
 
-        {/* Company */}
         <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-gray-400">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--hover-bg)" }}>
+            <span className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
               {(job.company_name || "?")[0].toUpperCase()}
             </span>
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-700 leading-tight">
+            <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-light)" }}>
               {job.company_name || "Unknown Company"}
             </p>
-            <p className="text-xs text-gray-400 leading-tight mt-0.5">
+            <p className="text-xs leading-tight mt-0.5" style={{ color: "var(--text-muted)" }}>
               {job.location || job.country || "Remote"}
             </p>
           </div>
         </div>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-3">
           {job.country && (
-            <span className="chip bg-gray-50 text-gray-500">
+            <span className="chip" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
               🌍 {job.country}
             </span>
           )}
           {job.posted_date && (
-            <span className="chip bg-gray-50 text-gray-500">
+            <span className="chip" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
               📅 {new Date(job.posted_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </span>
           )}
         </div>
 
-        {/* Description */}
         {job.description && (
-          <p className="text-[13px] text-gray-400 leading-relaxed line-clamp-2 mb-3">
+          <p className="text-[13px] leading-relaxed line-clamp-2 mb-3" style={{ color: "var(--text-muted)" }}>
             {job.description}
           </p>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-3 border-t border-gray-100 mt-auto">
-        <a
-          href={job.job_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-primary flex-1 text-[13px] py-2.5"
-        >
+      <div className="flex gap-2 pt-3 mt-auto" style={{ borderTop: "1px solid var(--border)" }}>
+        <a href={job.job_url} target="_blank" rel="noopener noreferrer"
+          className="btn btn-primary flex-1 text-[13px] py-2.5">
           Apply Now →
         </a>
         {onSave && (
-          <button
-            onClick={() => onSave(job.id)}
-            className={`btn text-[13px] py-2.5 px-4 ${
-              saved
-                ? "bg-amber-50 text-amber-600 border border-amber-200"
-                : "btn-outline"
-            }`}
-          >
+          <button onClick={() => onSave(job.id)}
+            className={`btn text-[13px] py-2.5 px-4 ${saved ? "btn-outline" : "btn-outline"}`}
+            style={saved ? { background: "var(--primary)", color: "white", border: "none" } : {}}>
             {saved ? "✓ Saved" : "Save"}
           </button>
         )}
