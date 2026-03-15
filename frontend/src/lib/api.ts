@@ -155,6 +155,12 @@ class ApiClient {
     if (!res.ok) throw new Error("Failed to mark read");
     return res.json();
   }
+
+  async getJob(id: string) {
+    const res = await fetch(`${API_URL}/jobs/${id}`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch job");
+    return res.json();
+  }
 }
 
 export const api = new ApiClient();

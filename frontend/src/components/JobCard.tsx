@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface Job {
   id: string;
   title: string;
@@ -14,11 +16,11 @@ interface Job {
 }
 
 const sourceConfig: Record<string, { label: string; emoji: string }> = {
-  remoteok:  { label: "RemoteOK", emoji: "🟢" },
-  wuzzuf:    { label: "Wuzzuf", emoji: "🔵" },
-  linkedin:  { label: "LinkedIn", emoji: "🔷" },
+  remoteok: { label: "RemoteOK", emoji: "🟢" },
+  wuzzuf: { label: "Wuzzuf", emoji: "🔵" },
+  linkedin: { label: "LinkedIn", emoji: "🔷" },
   arbeitnow: { label: "Arbeitnow", emoji: "🟣" },
-  jobicy:    { label: "Jobicy", emoji: "🟠" },
+  jobicy: { label: "Jobicy", emoji: "🟠" },
 };
 
 function timeAgo(dateStr: string): string {
@@ -39,7 +41,7 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
 
   return (
     <div className="card p-5 flex flex-col justify-between animate-fade-up">
-      <div>
+      <Link href={`/jobs/${job.id}`} className="block">
         <div className="flex items-center justify-between mb-3">
           <span className="badge" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
             {src.emoji} {src.label}
@@ -85,7 +87,7 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
             {job.description}
           </p>
         )}
-      </div>
+      </Link>
 
       <div className="flex gap-2 pt-3 mt-auto" style={{ borderTop: "1px solid var(--border)" }}>
         <a href={job.job_url} target="_blank" rel="noopener noreferrer"
@@ -94,8 +96,8 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
         </a>
         {onSave && (
           <button onClick={() => onSave(job.id)}
-            className={`btn text-[13px] py-2.5 px-4 ${saved ? "btn-outline" : "btn-outline"}`}
-            style={saved ? { background: "var(--primary)", color: "white", border: "none" } : {}}>
+            className="btn text-[13px] py-2.5 px-4"
+            style={saved ? { background: "var(--primary)", color: "white" } : { background: "var(--hover-bg)", color: "var(--text-light)", border: "1px solid var(--border)" }}>
             {saved ? "✓ Saved" : "Save"}
           </button>
         )}
