@@ -263,26 +263,31 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       {stats && activeTab === "recommended" && (
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        <div className="w-full px-5 sm:px-8 pt-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { icon: "💼", value: stats.total_jobs.toLocaleString(), label: "Total Jobs", color: "var(--primary)", bg: "#3b82f615" },
+              { icon: "🔗", value: Object.keys(stats.by_source || {}).length, label: "Sources", color: "var(--success)", bg: "#10b98115" },
+              { icon: "🌍", value: Object.keys(stats.by_country || {}).length, label: "Countries", color: "#8b5cf6", bg: "#8b5cf615" },
+              { icon: "♥", value: savedIds.size, label: "Saved Jobs", color: savedIds.size > 0 ? "#ef4444" : "#9ca3af", bg: savedIds.size > 0 ? "#ef444415" : "#9ca3af15" },
+            ].map((s, i) => (
+              <div key={i} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "16px", transition: "all 0.3s ease", cursor: "default" }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "42px", height: "42px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: s.bg, fontSize: "20px", flexShrink: 0 }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: "22px", fontWeight: 800, color: s.color, lineHeight: 1.2 }}>{s.value}</p>
+                    <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginTop: "2px" }}>{s.label}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="w-full px-5 sm:px-8 pt-5 pb-2">
