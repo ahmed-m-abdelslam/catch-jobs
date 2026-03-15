@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api } from "@/lib/api";
 import JobCard from "@/components/JobCard";
 import ThemeToggle from "@/components/ThemeToggle";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 type Tab = "recommended" | "saved" | "preferences" | "all";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<Tab>("recommended");
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,10 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
+  const [notifCount, setNotifCount] = useState(0);
+  const [quickSearch, setQuickSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const pageSize = 20;
 
   useEffect(() => {
@@ -32,6 +38,7 @@ export default function DashboardPage() {
     api.getJobStats().then(setStats).catch(() => {});
     api.getSavedJobs().then((jobs: any[]) => { setSavedJobs(jobs); setSavedIds(new Set(jobs.map((j: any) => j.id))); }).catch(() => {});
     api.getPreferences().then(setPreferences).catch(() => {});
+    api.getNotificationCount().then((r: any) => setNotifCount(r.count || 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -40,6 +47,10 @@ export default function DashboardPage() {
     if (activeTab === "saved") loadSaved();
     if (activeTab === "preferences") api.getPreferences().then(setPreferences);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (showSearch && searchRef.current) searchRef.current.focus();
+  }, [showSearch]);
 
   function loadRecommended() {
     setLoading(true);
@@ -54,9 +65,11 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }
 
-  function loadAllJobs(page: number = 1) {
+  function loadAllJobs(page: number = 1, search?: string) {
     setLoading(true);
-    api.getJobs({ page: String(page), page_size: String(pageSize) }).then((res: any) => {
+    const params: Record<string, string> = { page: String(page), page_size: String(pageSize) };
+    if (search) params.search = search;
+    api.getJobs(params).then((res: any) => {
       setAllJobs(res.jobs || []);
       setTotalPages(res.total_pages || 1);
       setTotalJobs(res.total || 0);
@@ -64,10 +77,19 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }
 
+  function handleQuickSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!quickSearch.trim()) return;
+    setActiveTab("all");
+    setCurrentPage(1);
+    loadAllJobs(1, quickSearch.trim());
+    setShowSearch(false);
+  }
+
   function goToPage(page: number) {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
-    loadAllJobs(page);
+    loadAllJobs(page, quickSearch || undefined);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -186,16 +208,50 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2">
+            {/* Quick Search */}
+            {showSearch ? (
+              <form onSubmit={handleQuickSearch} className="flex items-center gap-2">
+                <input ref={searchRef} type="text" value={quickSearch} onChange={e => setQuickSearch(e.target.value)}
+                  placeholder="Search jobs..." className="input text-sm py-1.5 px-3 w-48"
+                  onBlur={() => { if (!quickSearch) setShowSearch(false); }} />
+                <button type="submit" className="btn btn-primary text-xs py-1.5 px-3">Go</button>
+              </form>
+            ) : (
+              <button onClick={() => setShowSearch(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg transition"
+                style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}
+                title="Search">
+                🔍
+              </button>
+            )}
+
+            {/* Notification Bell */}
+            <button className="w-9 h-9 flex items-center justify-center rounded-lg transition relative"
+              style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}
+              title="Notifications">
+              🔔
+              {notifCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full"
+                  style={{ background: "var(--danger)", color: "white" }}>
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
+              )}
+            </button>
+
+            {/* User Avatar */}
             {user && (
-              <div className="hidden sm:flex items-center gap-2.5 rounded-full px-3 py-1.5" style={{ background: "var(--hover-bg)" }}>
+              <div className="hidden sm:flex items-center gap-2.5 rounded-full px-3 py-1.5 cursor-pointer" style={{ background: "var(--hover-bg)" }}>
                 <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">{user.full_name?.[0]?.toUpperCase()}</span>
                 </div>
                 <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{user.full_name}</span>
               </div>
             )}
+
             <ThemeToggle />
+
             <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
               style={{ color: "var(--text-muted)" }}>
@@ -204,6 +260,30 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {/* Stats Cards */}
+      {stats && activeTab === "recommended" && (
+        <div className="w-full px-5 sm:px-8 pt-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <p className="text-2xl font-extrabold" style={{ color: "var(--primary)" }}>{stats.total_jobs.toLocaleString()}</p>
+              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Total Jobs</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <p className="text-2xl font-extrabold" style={{ color: "var(--success)" }}>{Object.keys(stats.by_source || {}).length}</p>
+              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Sources</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <p className="text-2xl font-extrabold" style={{ color: "#8b5cf6" }}>{Object.keys(stats.by_country || {}).length}</p>
+              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Countries</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <p className="text-2xl font-extrabold" style={{ color: "#f59e0b" }}>{savedIds.size}</p>
+              <p className="text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>Saved Jobs</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="w-full px-5 sm:px-8 pt-5 pb-2">
         <div className="inline-flex gap-1 p-1 rounded-xl shadow-sm" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
@@ -258,13 +338,22 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>All Jobs</h2>
-                <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>All available jobs · Newest first</p>
+                <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>
+                  {quickSearch ? `Results for "${quickSearch}"` : "All Jobs"}
+                </h2>
+                <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  {quickSearch ? `${totalJobs} jobs found` : "All available jobs · Newest first"}
+                </p>
               </div>
-              <button onClick={() => loadAllJobs(1)} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
+              <div className="flex gap-2">
+                {quickSearch && (
+                  <button onClick={() => { setQuickSearch(""); loadAllJobs(1); }} className="btn btn-outline text-xs py-2 px-4">Clear Search</button>
+                )}
+                <button onClick={() => loadAllJobs(1, quickSearch || undefined)} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
+              </div>
             </div>
             {loading ? <Spinner /> : allJobs.length === 0 ? (
-              <EmptyState icon="📋" title="No jobs available" subtitle="Jobs are being collected. Check back soon!" />
+              <EmptyState icon="📋" title="No jobs found" subtitle={quickSearch ? "Try a different search term" : "Jobs are being collected. Check back soon!"} />
             ) : (
               <div>
                 <p className="text-sm mb-4 font-medium" style={{ color: "var(--text-muted)" }}>
