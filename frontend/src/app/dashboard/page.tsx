@@ -516,61 +516,151 @@ export default function DashboardPage() {
 
         {activeTab === "preferences" && (
           <div>
-            <div style={{ marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ marginBottom: "28px", paddingBottom: "16px", borderBottom: "1px solid var(--border)" }}>
               <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "4px" }}>⚙️ Preferences</h2>
               <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>Set your job preferences to get better recommendations in "For You"</p>
             </div>
-            <div className="rounded-xl shadow-sm p-6 mb-6" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-              <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>Add Preference</h3>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <label className="label">Job Title</label>
-                  <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
-                    placeholder="e.g. Software Engineer" className="input" />
+
+            {/* Add Preference Card */}
+            <div style={{
+              background: "var(--card)", border: "1px solid var(--border)", borderRadius: "16px",
+              padding: "28px", marginBottom: "28px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", background: "#3b82f615", fontSize: "18px" }}>
+                  ➕
                 </div>
+                <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>Add New Preference</h3>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                 <div>
-                  <label className="label">Country</label>
-                  <input type="text" value={newCountry} onChange={e => setNewCountry(e.target.value)}
-                    placeholder="e.g. Egypt" className="input" />
-                </div>
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2.5 text-sm font-medium cursor-pointer" style={{ color: "var(--text-light)" }}>
-                    <input type="checkbox" checked={newRemote} onChange={e => setNewRemote(e.target.checked)}
-                      className="w-4 h-4 rounded" />
-                    Include Remote
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    💼 Job Title
                   </label>
+                  <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                    placeholder="e.g. Software Engineer"
+                    style={{
+                      width: "100%", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--border)",
+                      background: "var(--bg)", color: "var(--text)", fontSize: "14px", outline: "none",
+                      transition: "all 0.2s ease", boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.1)"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
+                  />
                 </div>
-                <div className="flex items-end">
-                  <button onClick={addPref} disabled={!newTitle || !newCountry}
-                    className="btn w-full py-2.5 text-[13px] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: "var(--success)", color: "white" }}>
-                    + Add
-                  </button>
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    🌍 Country
+                  </label>
+                  <input type="text" value={newCountry} onChange={e => setNewCountry(e.target.value)}
+                    placeholder="e.g. Egypt"
+                    style={{
+                      width: "100%", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--border)",
+                      background: "var(--bg)", color: "var(--text)", fontSize: "14px", outline: "none",
+                      transition: "all 0.2s ease", boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.1)"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
+                  />
                 </div>
               </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                <label style={{
+                  display: "flex", alignItems: "center", gap: "10px", cursor: "pointer",
+                  padding: "8px 16px", borderRadius: "10px", border: "1px solid var(--border)",
+                  background: newRemote ? "#10b98115" : "transparent",
+                  transition: "all 0.2s ease",
+                }}>
+                  <div style={{
+                    width: "20px", height: "20px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center",
+                    background: newRemote ? "#10b981" : "var(--bg)", border: newRemote ? "none" : "2px solid var(--border)",
+                    transition: "all 0.2s ease",
+                  }}>
+                    {newRemote && <span style={{ color: "white", fontSize: "12px", fontWeight: 800 }}>✓</span>}
+                  </div>
+                  <input type="checkbox" checked={newRemote} onChange={e => setNewRemote(e.target.checked)} style={{ display: "none" }} />
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: newRemote ? "#10b981" : "var(--text-light)" }}>
+                    🏠 Include Remote Jobs
+                  </span>
+                </label>
+
+                <button onClick={addPref} disabled={!newTitle || !newCountry}
+                  style={{
+                    padding: "12px 32px", borderRadius: "10px", border: "none",
+                    background: (!newTitle || !newCountry) ? "var(--hover-bg)" : "var(--primary)",
+                    color: (!newTitle || !newCountry) ? "var(--text-muted)" : "white",
+                    fontSize: "14px", fontWeight: 700, cursor: (!newTitle || !newCountry) ? "not-allowed" : "pointer",
+                    transition: "all 0.2s ease",
+                    display: "flex", alignItems: "center", gap: "6px",
+                  }}
+                  onMouseEnter={(e) => { if (newTitle && newCountry) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(59,130,246,0.3)"; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+                >
+                  ➕ Add Preference
+                </button>
+              </div>
             </div>
+
+            {/* Preferences List */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>Your Preferences</h3>
+              {preferences.length > 0 && (
+                <span style={{ fontSize: "11px", fontWeight: 700, padding: "3px 10px", borderRadius: "100px", background: "var(--primary)", color: "white" }}>
+                  {preferences.length}
+                </span>
+              )}
+            </div>
+
             {preferences.length === 0 ? (
               <EmptyState icon="⚙️" title="No preferences set" subtitle="Add your ideal job title and country to get personalized recommendations" />
             ) : (
-              <div className="space-y-2.5">
-                {preferences.map((pref: any) => (
-                  <div key={pref.id} className="card p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--hover-bg)" }}>
-                        <span className="text-lg">🎯</span>
+              <div style={{ display: "grid", gap: "12px" }}>
+                {preferences.map((pref: any, i: number) => (
+                  <div key={pref.id} style={{
+                    background: "var(--card)", border: "1px solid var(--border)", borderRadius: "14px",
+                    padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                    transition: "all 0.3s ease", animation: `slideUp 0.4s ease ${i * 0.1}s both`,
+                  }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                      <div style={{
+                        width: "44px", height: "44px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "linear-gradient(135deg, #3b82f6, #6366f1)", fontSize: "20px",
+                      }}>
+                        🎯
                       </div>
                       <div>
-                        <p className="text-sm font-bold" style={{ color: "var(--text)" }}>{pref.job_title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{pref.country}</span>
-                          {pref.remote_allowed && <span className="badge" style={{ background: "var(--hover-bg)", color: "var(--success)" }}>Remote OK</span>}
+                        <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>{pref.job_title}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+                          <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+                            🌍 {pref.country}
+                          </span>
+                          {pref.remote_allowed && (
+                            <span style={{
+                              padding: "2px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 700,
+                              background: "#10b98115", color: "#10b981",
+                            }}>
+                              🏠 Remote OK
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                     <button onClick={() => delPref(pref.id)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
-                      style={{ color: "var(--danger)" }}>
-                      Remove
+                      style={{
+                        width: "36px", height: "36px", borderRadius: "10px", border: "1px solid var(--border)",
+                        background: "var(--bg)", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", fontSize: "16px", transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.color = "#ef4444"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg)"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                      title="Remove preference"
+                    >
+                      ✕
                     </button>
                   </div>
                 ))}
