@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import text
 from app.database import get_db
-from app.models.job import Job, JobEmbedding
+from app.models.job import JobEmbedding
 from app.services.embedding import generate_embedding_for_job
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -13,8 +13,6 @@ async def backfill_embeddings(
     batch_size: int = Query(default=100, le=500),
     db: AsyncSession = Depends(get_db),
 ):
-    """Generate embeddings for jobs that don't have them yet."""
-    # Find jobs without embeddings
     query = text("""
         SELECT j.id, j.title, j.company_name, j.description
         FROM jobs j
@@ -40,7 +38,6 @@ async def backfill_embeddings(
             job_emb = JobEmbedding(job_id=job.id, embedding=embedding)
             db.add(job_emb)
             count += 1
-
             if count % 50 == 0:
                 await db.flush()
                 print(f"Backfill progress: {count}/{len(jobs)}")
@@ -50,16 +47,12 @@ async def backfill_embeddings(
 
     await db.commit()
 
-    # Count remaining
-    remaining = await db.execute(text("""
-        SELECT COUNT(*) FROM jobs j
-        LEFT JOIN job_embeddings je ON je.job_id = j.id
-        WHERE je.id IS NULL
-    """))
-    remaining_count = remaining.scalar()
+    rem_result = await db.execute(text(
+        "SELECT COUNT(*) FROM jobs j LEFT JOIN job_embeddings je ON je.job_id = j.id WHERE je.id IS NULL"
+    ))
+    remaining_count = rem_result.scalar_one()
 
     return {
-        "message": f"Processed {count} jobs",
         "processed": count,
         "errors": errors,
         "remaining": remaining_count,
@@ -68,11 +61,14 @@ async def backfill_embeddings(
 
 @router.get("/embedding-stats")
 async def embedding_stats(db: AsyncSession = Depends(get_db)):
-    """Check how many jobs have embeddings."""
-    total = await db.execute(text("SELECT COUNT(*) FROM jobs"))
-    with_emb = await db.execute(text("SELECT COUNT(*) FROM job_embeddings"))
+    total_result = await db.execute(text("SELECT COUNT(*) FROM jobs"))
+    total = total_result.scalar_one()
+
+    emb_result = await db.execute(text("SELECT COUNT(*) FROM job_embeddings"))
+    with_emb = emb_result.scalar_one()
+
     return {
-        "total_jobs": total.scalar(),
-        "with_embeddings": with_emb.scalar(),
-        "without_embeddings": total.scalar() - with_emb.scalar(),
+        "total_jobs": total,
+        "with_embeddings": with_emb,
+        "without_embeddings": total - with_emb,
     }
