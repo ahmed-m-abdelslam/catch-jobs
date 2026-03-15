@@ -157,7 +157,7 @@ export default function LoginPage() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: "24px" }}>
         <div style={{ position: "absolute", top: "20px", right: "20px" }}><ThemeToggle /></div>
-        <div style={{ width: "100%", maxWidth: "440px" }}>
+        <div style={{ width: "100%", maxWidth: "440px", animation: "scaleIn 0.5s ease both" }}>
           <div style={{ background: "var(--card)", borderRadius: "24px", border: "1px solid var(--border)", padding: "40px", boxShadow: "0 20px 60px rgba(0,0,0,0.08)" }}>
             <div style={{ textAlign: "center", marginBottom: "32px" }}>
               <Image src="/logo.png" alt="Catch Jobs" width={48} height={48} className="rounded-xl" style={{ margin: "0 auto 16px" }} />
@@ -256,7 +256,7 @@ export default function LoginPage() {
         <div style={{ position: "absolute", top: "-100px", right: "-100px", width: "300px", height: "300px", borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
         <div style={{ position: "absolute", bottom: "-60px", left: "-60px", width: "200px", height: "200px", borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
 
-        <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "400px" }}>
+        <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "400px", animation: "slideUp 0.8s ease both" }}>
           <Image src="/logo.png" alt="Catch Jobs" width={72} height={72} className="rounded-2xl" style={{ margin: "0 auto 24px" }} />
           <h2 style={{ fontSize: "36px", fontWeight: 800, color: "white", marginBottom: "12px" }}>Catch Jobs</h2>
           <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.75)", lineHeight: 1.7, marginBottom: "48px" }}>
@@ -264,7 +264,7 @@ export default function LoginPage() {
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px", marginBottom: "48px" }}>
-            {features.map((f, i) => (
+            {features.map((f, i) => { const delay = `${i * 0.15}s`; return (
               <div key={i} style={{
                 background: "rgba(255,255,255,0.1)",
                 backdropFilter: "blur(10px)",
@@ -272,15 +272,21 @@ export default function LoginPage() {
                 padding: "20px",
                 textAlign: "center",
                 border: "1px solid rgba(255,255,255,0.1)",
-              }}>
+                animation: `slideUp 0.6s ease ${delay} both`,
+                transition: "all 0.3s ease",
+                cursor: "default",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.background = "rgba(255,255,255,0.15)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+              >
                 <span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>{f.icon}</span>
                 <p style={{ fontSize: "14px", fontWeight: 700, color: "white", marginBottom: "4px" }}>{f.title}</p>
                 <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.6)" }}>{f.desc}</p>
               </div>
-            ))}
+            ); })}
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center", gap: "40px" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: "40px", animation: "slideUp 0.8s ease 0.6s both" }}>
             <div style={{ textAlign: "center" }}>
               <p style={{ fontSize: "32px", fontWeight: 800, color: "white" }}>10K+</p>
               <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", marginTop: "4px" }}>Jobs</p>
@@ -301,7 +307,7 @@ export default function LoginPage() {
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", position: "relative" }}>
         <div style={{ position: "absolute", top: "20px", right: "20px" }}><ThemeToggle /></div>
 
-        <div style={{ width: "100%", maxWidth: "420px" }}>
+        <div style={{ width: "100%", maxWidth: "420px", animation: "slideIn 0.8s ease both" }}>
           {/* Mobile logo */}
           <div className="lg:hidden" style={{ alignItems: "center", gap: "12px", marginBottom: "32px" }}>
             <Image src="/logo.png" alt="Catch Jobs" width={40} height={40} className="rounded-xl" />
