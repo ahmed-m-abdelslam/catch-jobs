@@ -21,7 +21,7 @@ export default function LandingPage() {
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 glass-header" style={{ borderBottom: "1px solid var(--border)" }}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
+        <div className="w-full max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Catch Jobs" width={32} height={32} className="rounded-lg" />
             <span className="text-lg font-extrabold gradient-text">Catch Jobs</span>
@@ -39,8 +39,8 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-28 pb-20 px-6">
-        <div className={`max-w-3xl mx-auto text-center transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
+      <section className="pt-28 pb-16 px-6">
+        <div className={`w-full max-w-3xl mx-auto text-center transition-all duration-1000 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
           <div className="inline-flex items-center gap-2 text-sm font-medium px-4 py-1.5 rounded-full mb-6"
             style={{ background: "var(--hover-bg)", border: "1px solid var(--border)", color: "var(--primary)" }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--primary)" }}></span>
@@ -56,23 +56,23 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
-            <Link href="/login" className="btn btn-primary text-base py-3.5 px-8 rounded-xl hover-lift w-full sm:w-auto">
+            <Link href="/login" className="btn btn-primary text-base py-3.5 px-8 rounded-xl hover-lift w-full sm:w-auto text-center">
               Start Catching Jobs →
             </Link>
-            <a href="#features" className="btn btn-outline text-base py-3.5 px-8 rounded-xl w-full sm:w-auto">
+            <a href="#features" className="btn btn-outline text-base py-3.5 px-8 rounded-xl w-full sm:w-auto text-center">
               See How It Works
             </a>
           </div>
 
           {stats && (
-            <div className="grid grid-cols-4 gap-3 max-w-2xl mx-auto">
+            <div className="grid grid-cols-4 gap-3 w-full max-w-2xl mx-auto">
               {[
                 { value: stats.total_jobs.toLocaleString(), label: "Total Jobs", color: "var(--primary)" },
                 { value: Object.keys(stats.by_source || {}).length, label: "Sources", color: "var(--success)" },
                 { value: Object.keys(stats.by_country || {}).length, label: "Countries", color: "#8b5cf6" },
                 { value: "10m", label: "Refresh Rate", color: "#f59e0b" },
               ].map((s, i) => (
-                <div key={i} className="rounded-xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+                <div key={i} className="rounded-xl p-4 text-center" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
                   <p className="text-2xl sm:text-3xl font-extrabold" style={{ color: s.color }}>{s.value}</p>
                   <p className="text-[11px] sm:text-xs font-medium mt-1" style={{ color: "var(--text-muted)" }}>{s.label}</p>
                 </div>
@@ -84,7 +84,7 @@ export default function LandingPage() {
 
       {/* Sources Bar */}
       <section className="py-8 px-6" style={{ background: "var(--card)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+        <div className="w-full max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>We collect from</p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {[
@@ -105,7 +105,7 @@ export default function LandingPage() {
 
       {/* Features */}
       <section id="features" className="py-20 px-6">
-        <div className="max-w-5xl mx-auto">
+        <div className="w-full max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-extrabold mb-3" style={{ color: "var(--text)" }}>
               Everything You Need to <span className="gradient-text">Land Your Next Role</span>
@@ -115,7 +115,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="w-full grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: "🤖", title: "AI-Powered Matching", desc: "Get personalized job recommendations based on your skills and preferences." },
               { icon: "🔄", title: "Auto-Updated Every 10 Min", desc: "Fresh jobs scraped from top platforms automatically." },
@@ -124,9 +124,9 @@ export default function LandingPage() {
               { icon: "📧", title: "Verified Accounts", desc: "Secure registration with email verification." },
               { icon: "⚡", title: "Lightning Fast", desc: "Blazing fast search across thousands of jobs." },
             ].map((f, i) => (
-              <div key={i} className="rounded-xl p-6 hover-lift transition-all"
+              <div key={i} className="rounded-xl p-6 hover-lift transition-all text-center"
                 style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ background: "var(--hover-bg)" }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 mx-auto" style={{ background: "var(--hover-bg)" }}>
                   <span className="text-2xl">{f.icon}</span>
                 </div>
                 <h3 className="text-base font-bold mb-2" style={{ color: "var(--text)" }}>{f.title}</h3>
@@ -139,13 +139,13 @@ export default function LandingPage() {
 
       {/* How It Works */}
       <section className="py-20 px-6" style={{ background: "var(--card)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-extrabold mb-3" style={{ color: "var(--text)" }}>How It Works</h2>
             <p className="text-base" style={{ color: "var(--text-muted)" }}>Three simple steps to your next opportunity</p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-8">
+          <div className="w-full grid sm:grid-cols-3 gap-8">
             {[
               { step: "1", title: "Create Account", desc: "Sign up with your email and verify in seconds.", icon: "📝" },
               { step: "2", title: "Set Preferences", desc: "Tell us your dream job title and preferred country.", icon: "🎯" },
@@ -170,7 +170,7 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="py-20 px-6">
-        <div className="max-w-3xl mx-auto text-center rounded-2xl p-10 sm:p-14"
+        <div className="w-full max-w-3xl mx-auto text-center rounded-2xl p-10 sm:p-14"
           style={{ background: "var(--primary)" }}>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
             Ready to Catch Your Dream Job?
@@ -188,7 +188,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-8 px-6" style={{ borderTop: "1px solid var(--border)" }}>
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="w-full max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Catch Jobs" width={20} height={20} className="rounded-md" />
             <span className="text-sm font-bold" style={{ color: "var(--text)" }}>Catch Jobs</span>
