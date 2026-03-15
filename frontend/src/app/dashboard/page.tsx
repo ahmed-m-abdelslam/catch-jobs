@@ -420,16 +420,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="w-full px-5 sm:px-8 py-5" key={activeTab}>
+      <div style={{ width: "100%", padding: "24px 20px 40px", maxWidth: "1400px", margin: "0 auto" }} key={activeTab}>
 
         {activeTab === "recommended" && (
           <div>
-            <div className="flex items-center justify-between mb-5">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border)" }}>
               <div>
-                <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>For You</h2>
-                <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>Personalized recommendations based on your preferences</p>
+                <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "4px" }}>✨ For You</h2>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>Personalized recommendations based on your preferences</p>
               </div>
-              <button onClick={loadRecommended} className="btn btn-primary text-xs py-2 px-4">↻ Refresh</button>
+              <button onClick={loadRecommended} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 20px", borderRadius: "10px", border: "none", background: "var(--primary)", color: "white", fontSize: "13px", fontWeight: 700, cursor: "pointer", transition: "all 0.2s ease" }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(59,130,246,0.3)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
+              >↻ Refresh</button>
             </div>
             {loading ? <Spinner /> : recommendedJobs.length === 0 ? (
               <EmptyState icon="✨" title="No recommendations yet" subtitle="Add preferences to get personalized job recommendations"
@@ -450,10 +453,10 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>
-                  {quickSearch ? `Results for "${quickSearch}"` : "All Jobs"}
+                <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "4px" }}>
+                  {quickSearch ? `🔍 Results for "${quickSearch}"` : "📋 All Jobs"}
                 </h2>
-                <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
                   {quickSearch ? `${totalJobs} jobs found` : "All available jobs · Newest first"}
                 </p>
               </div>
@@ -468,8 +471,8 @@ export default function DashboardPage() {
               <EmptyState icon="📋" title="No jobs found" subtitle={quickSearch ? "Try a different search term" : "Jobs are being collected. Check back soon!"} />
             ) : (
               <div>
-                <p className="text-sm mb-4 font-medium" style={{ color: "var(--text-muted)" }}>
-                  Showing <strong style={{ color: "var(--text)" }}>{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong style={{ color: "var(--text)" }}>{totalJobs.toLocaleString()}</strong> jobs
+                <p style={{ fontSize: "13px", fontWeight: 500, marginBottom: "16px", padding: "10px 16px", borderRadius: "10px", background: "var(--hover-bg)", color: "var(--text-muted)", display: "inline-block" }}>
+                  Showing <strong style={{ color: "var(--text)", fontWeight: 700 }}>{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong style={{ color: "var(--text)", fontWeight: 700 }}>{totalJobs.toLocaleString()}</strong> jobs
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 card-grid">
                   {allJobs.map((job: any, i: number) => (
@@ -486,9 +489,9 @@ export default function DashboardPage() {
 
         {activeTab === "saved" && (
           <div>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>Saved Jobs</h2>
-              {savedJobs.length > 0 && <span className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>{savedJobs.length} saved</span>}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border)" }}>
+              <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)" }}>❤️ Saved Jobs</h2>
+              {savedJobs.length > 0 && <span style={{ fontSize: "13px", fontWeight: 600, padding: "4px 12px", borderRadius: "100px", background: "#ef444415", color: "#ef4444" }}>{savedJobs.length} saved</span>}
             </div>
             {loading ? <Spinner /> : savedJobs.length === 0 ? (
               <EmptyState icon="💾" title="No saved jobs" subtitle="Save jobs you're interested in to find them here"
@@ -513,8 +516,10 @@ export default function DashboardPage() {
 
         {activeTab === "preferences" && (
           <div>
-            <h2 className="text-xl font-extrabold mb-2" style={{ color: "var(--text)" }}>Preferences</h2>
-            <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>Set your job preferences to get better recommendations in "For You"</p>
+            <div style={{ marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border)" }}>
+              <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "4px" }}>⚙️ Preferences</h2>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>Set your job preferences to get better recommendations in "For You"</p>
+            </div>
             <div className="rounded-xl shadow-sm p-6 mb-6" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
               <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text)" }}>Add Preference</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
