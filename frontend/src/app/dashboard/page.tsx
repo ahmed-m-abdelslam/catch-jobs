@@ -291,22 +291,37 @@ export default function DashboardPage() {
       )}
 
       <div className="w-full px-5 sm:px-8 pt-5 pb-2">
-        <div className="inline-flex gap-1 p-1 rounded-xl shadow-sm" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+        <div style={{ display: "inline-flex", gap: "4px", padding: "4px", borderRadius: "14px", background: "var(--card)", border: "1px solid var(--border)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
-              style={activeTab === tab.key
-                ? { background: "var(--primary)", color: "white" }
-                : { color: "var(--text-light)" }
-              }>
-              <span className="text-[13px]">{tab.icon}</span>
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 20px",
+                fontSize: "13px",
+                fontWeight: 700,
+                borderRadius: "10px",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+                background: activeTab === tab.key ? "var(--primary)" : "transparent",
+                color: activeTab === tab.key ? "white" : "var(--text-light)",
+                boxShadow: activeTab === tab.key ? "0 4px 12px rgba(59,130,246,0.3)" : "none",
+                transform: activeTab === tab.key ? "scale(1.02)" : "scale(1)",
+              }}>
+              <span style={{ fontSize: "18px" }}>{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>
               {tab.count !== undefined && tab.count > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5"
-                  style={activeTab === tab.key
-                    ? { background: "rgba(255,255,255,0.2)", color: "white" }
-                    : { background: "var(--hover-bg)", color: "var(--text-muted)" }
-                  }>{tab.count > 999 ? `${(tab.count / 1000).toFixed(1)}k` : tab.count}</span>
+                <span style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  padding: "2px 8px",
+                  borderRadius: "100px",
+                  marginLeft: "2px",
+                  background: activeTab === tab.key ? "rgba(255,255,255,0.25)" : "var(--hover-bg)",
+                  color: activeTab === tab.key ? "white" : "var(--text-muted)",
+                }}>{tab.count > 999 ? `${(tab.count / 1000).toFixed(1)}k` : tab.count}</span>
               )}
             </button>
           ))}
