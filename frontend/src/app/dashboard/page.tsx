@@ -308,7 +308,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="w-full px-5 sm:px-8 py-5">
+      <div className="w-full px-5 sm:px-8 py-5" key={activeTab}>
 
         {activeTab === "recommended" && (
           <div>
@@ -323,7 +323,7 @@ export default function DashboardPage() {
               <EmptyState icon="✨" title="No recommendations yet" subtitle="Add preferences to get personalized job recommendations"
                 action={<button onClick={() => setActiveTab("preferences")} className="btn btn-primary text-xs py-2">Set Preferences</button>} />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 card-grid">
                 {recommendedJobs.map((job: any, i: number) => (
                   <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
                     <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                 <p className="text-sm mb-4 font-medium" style={{ color: "var(--text-muted)" }}>
                   Showing <strong style={{ color: "var(--text)" }}>{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalJobs)}</strong> of <strong style={{ color: "var(--text)" }}>{totalJobs.toLocaleString()}</strong> jobs
                 </p>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 card-grid">
                   {allJobs.map((job: any, i: number) => (
                     <div key={job.id} style={{ animationDelay: `${i * 0.03}s` }}>
                       <JobCard job={job} onSave={handleSave} saved={savedIds.has(job.id)} />
@@ -382,7 +382,7 @@ export default function DashboardPage() {
               <EmptyState icon="💾" title="No saved jobs" subtitle="Save jobs you're interested in to find them here"
                 action={<button onClick={() => setActiveTab("all")} className="btn btn-primary text-xs py-2">Browse All Jobs</button>} />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 card-grid">
                 {savedJobs.map((job: any) => (
                   <div key={job.id} className="relative">
                     <JobCard job={job} saved={true} />

@@ -186,3 +186,49 @@ input:focus, select:focus, textarea:focus {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Page transitions */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-slide-in { animation: slideIn 0.4s ease forwards; }
+.animate-scale-in { animation: scaleIn 0.3s ease forwards; }
+.animate-slide-up { animation: slideUp 0.5s ease forwards; }
+.animate-pulse-soft { animation: pulse-soft 2s ease infinite; }
+
+/* Hover effects */
+.hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 8px 25px var(--shadow-color); }
+
+/* Smooth tab content transition */
+.tab-content { animation: fadeUp 0.3s ease forwards; }
+
+/* Card stagger animation */
+.card-grid > div:nth-child(1) { animation-delay: 0s; }
+.card-grid > div:nth-child(2) { animation-delay: 0.05s; }
+.card-grid > div:nth-child(3) { animation-delay: 0.1s; }
+.card-grid > div:nth-child(4) { animation-delay: 0.15s; }
+.card-grid > div:nth-child(5) { animation-delay: 0.2s; }
+.card-grid > div:nth-child(6) { animation-delay: 0.25s; }
+.card-grid > div:nth-child(7) { animation-delay: 0.3s; }
+.card-grid > div:nth-child(8) { animation-delay: 0.35s; }
+
+/* Button press effect */
+.btn:active { transform: scale(0.97); }
+
+/* Smooth scrollbar */
+html { scroll-behavior: smooth; }

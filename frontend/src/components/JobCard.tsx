@@ -40,7 +40,7 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
   const src = sourceConfig[job.source] || { label: job.source, emoji: "⚪" };
 
   return (
-    <div className="card p-5 flex flex-col justify-between animate-fade-up">
+    <div className="card p-5 hover-lift flex flex-col justify-between animate-fade-up">
       <Link href={`/jobs/${job.id}`} className="block">
         <div className="flex items-center justify-between mb-3">
           <span className="badge" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
