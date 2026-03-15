@@ -13,6 +13,7 @@ from app.schemas.job import JobResponse
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
+@router.get("")
 @router.get("/")
 async def get_notifications(
     unread_only: bool = Query(default=False),
@@ -54,6 +55,7 @@ async def get_notifications(
 
 
 @router.get("/count")
+@router.get("/count/")
 async def get_unread_count(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
