@@ -12,6 +12,27 @@
   --success: #059669;
   --danger: #dc2626;
   --radius: 12px;
+  --input-bg: #f8fafc;
+  --hover-bg: #f8fafc;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --shadow-color: rgba(0,0,0,0.06);
+}
+
+[data-theme="dark"] {
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #f1f5f9;
+  --text-light: #94a3b8;
+  --text-muted: #64748b;
+  --border: #334155;
+  --success: #10b981;
+  --danger: #ef4444;
+  --input-bg: #1e293b;
+  --hover-bg: #334155;
+  --glass-bg: rgba(15, 23, 42, 0.85);
+  --shadow-color: rgba(0,0,0,0.3);
 }
 
 * {
@@ -26,21 +47,20 @@ body {
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #475569; }
 
-/* Focus */
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-/* Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -52,39 +72,34 @@ input:focus, select:focus, textarea:focus {
 .animate-fade-up { animation: fadeUp 0.4s ease forwards; }
 .animate-fade-in { animation: fadeIn 0.3s ease forwards; }
 
-/* Staggered animation */
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }
 
-/* Card */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.3s ease;
 }
 .card:hover {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 20px var(--shadow-color);
   transform: translateY(-1px);
 }
 
-/* Gradient */
 .gradient-text {
-  background: linear-gradient(135deg, #1a56db, #7c3aed);
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glass header */
 .glass-header {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Button base */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -103,7 +118,7 @@ input:focus, select:focus, textarea:focus {
 }
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.25);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
 .btn-outline {
   background: transparent;
@@ -111,32 +126,30 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-light);
 }
 .btn-outline:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--hover-bg);
+  border-color: var(--text-muted);
 }
 
-/* Input base */
 .input {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 16px;
   font-size: 0.875rem;
-  background: #f8fafc;
+  background: var(--input-bg);
   color: var(--text);
   transition: all 0.2s ease;
 }
 .input:hover {
-  border-color: #cbd5e1;
+  border-color: var(--text-muted);
 }
 .input:focus {
-  background: white;
+  background: var(--card);
 }
 .input::placeholder {
   color: var(--text-muted);
 }
 
-/* Label */
 .label {
   display: block;
   font-size: 0.75rem;
@@ -147,7 +160,6 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 6px;
 }
 
-/* Badge */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -158,7 +170,6 @@ input:focus, select:focus, textarea:focus {
   letter-spacing: 0.02em;
 }
 
-/* Tag chip */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -169,7 +180,6 @@ input:focus, select:focus, textarea:focus {
   border-radius: 20px;
 }
 
-/* Line clamp */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

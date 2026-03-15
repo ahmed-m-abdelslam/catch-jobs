@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import Image from "next/image";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type View = "login" | "register" | "verify" | "forgot" | "reset";
 

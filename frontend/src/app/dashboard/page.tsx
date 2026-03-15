@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import JobCard from "@/components/JobCard";
+import ThemeToggle from "@/components/ThemeToggle";
 import Image from "next/image";
 
 type Tab = "recommended" | "saved" | "preferences" | "all";
@@ -189,6 +190,7 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-gray-700">{user.full_name}</span>
               </div>
             )}
+            <ThemeToggle />
             <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
               className="text-xs text-gray-400 hover:text-red-500 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
               Logout

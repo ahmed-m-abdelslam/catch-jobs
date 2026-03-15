@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import ThemeToggle from "@/components/ThemeToggle";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -69,10 +70,12 @@ export default function LandingPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link href="/login"
               className="text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition">
               Sign In
             </Link>
+            <ThemeToggle />
             <Link href="/login"
               className="text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all">
               Get Started Free
@@ -101,6 +104,7 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <ThemeToggle />
             <Link href="/login"
               className="w-full sm:w-auto text-center text-base font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 rounded-2xl hover:shadow-xl hover:shadow-blue-500/30 transition-all hover:-translate-y-0.5">
               Start Catching Jobs →
@@ -213,7 +217,8 @@ export default function LandingPage() {
           <p className="text-lg text-blue-100 mb-8 max-w-xl mx-auto">
             Join now and get instant access to thousands of jobs from top platforms worldwide.
           </p>
-          <Link href="/login"
+          <ThemeToggle />
+            <Link href="/login"
             className="inline-block text-base font-bold text-blue-600 bg-white px-8 py-4 rounded-2xl hover:shadow-lg transition-all hover:-translate-y-0.5">
             Get Started Free →
           </Link>
@@ -229,6 +234,7 @@ export default function LandingPage() {
           </div>
           <p className="text-sm text-gray-400">© 2026 Catch Jobs. All rights reserved.</p>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700 font-medium">Sign In</Link>
             <a href="#features" className="text-sm text-gray-500 hover:text-gray-700 font-medium">Features</a>
           </div>
