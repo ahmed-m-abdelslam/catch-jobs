@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="JobMatcher API", lifespan=lifespan, redirect_slashes=False)
+app = FastAPI(title="JobMatcher API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

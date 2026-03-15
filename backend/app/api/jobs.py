@@ -12,7 +12,7 @@ from app.models.preference import UserPreference
 from app.models.notification import SavedJob
 from app.schemas.job import JobResponse
 
-router = APIRouter(prefix="/jobs", tags=["Jobs"], redirect_slashes=False)
+router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 
 @router.get("/stats")
