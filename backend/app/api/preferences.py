@@ -12,6 +12,7 @@ from app.schemas.preference import PreferenceCreate, PreferenceUpdate, Preferenc
 router = APIRouter(prefix="/preferences", tags=["Preferences"])
 
 
+@router.get("")
 @router.get("/", response_model=list[PreferenceResponse])
 async def list_preferences(
     current_user: User = Depends(get_current_user),
@@ -23,6 +24,7 @@ async def list_preferences(
     return [PreferenceResponse.model_validate(p) for p in result.scalars().all()]
 
 
+@router.post("")
 @router.post("/", response_model=PreferenceResponse)
 async def create_preference(
     data: PreferenceCreate,

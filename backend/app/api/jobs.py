@@ -136,6 +136,7 @@ async def get_saved_jobs(
     return [JobResponse.model_validate(j) for j in jobs]
 
 
+@router.get("")
 @router.get("/")
 async def list_jobs(
     country: str | None = Query(default=None),
