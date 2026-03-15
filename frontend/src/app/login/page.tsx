@@ -303,7 +303,7 @@ export default function LoginPage() {
 
         <div style={{ width: "100%", maxWidth: "420px" }}>
           {/* Mobile logo */}
-          <div className="lg:hidden" style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "32px" }}>
+          <div className="lg:hidden" style={{ alignItems: "center", gap: "12px", marginBottom: "32px" }}>
             <Image src="/logo.png" alt="Catch Jobs" width={40} height={40} className="rounded-xl" />
             <span style={{ fontSize: "20px", fontWeight: 800, color: "var(--text)" }}>Catch Jobs</span>
           </div>
