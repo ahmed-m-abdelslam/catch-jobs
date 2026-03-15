@@ -15,13 +15,24 @@ interface Job {
   created_at: string;
 }
 
-const sourceConfig: Record<string, { label: string; emoji: string }> = {
-  remoteok: { label: "RemoteOK", emoji: "🟢" },
-  wuzzuf: { label: "Wuzzuf", emoji: "🔵" },
-  linkedin: { label: "LinkedIn", emoji: "🔷" },
-  arbeitnow: { label: "Arbeitnow", emoji: "🟣" },
-  jobicy: { label: "Jobicy", emoji: "🟠" },
+const sourceConfig: Record<string, { label: string; color: string; bg: string }> = {
+  remoteok: { label: "RemoteOK", color: "#16a34a", bg: "#dcfce7" },
+  wuzzuf: { label: "Wuzzuf", color: "#2563eb", bg: "#dbeafe" },
+  linkedin: { label: "LinkedIn", color: "#0077b5", bg: "#e0f2fe" },
+  arbeitnow: { label: "Arbeitnow", color: "#7c3aed", bg: "#ede9fe" },
+  jobicy: { label: "Jobicy", color: "#db2777", bg: "#fce7f3" },
 };
+
+const avatarColors = [
+  "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
+  "#ec4899", "#06b6d4", "#f97316", "#6366f1", "#14b8a6",
+];
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return avatarColors[Math.abs(hash) % avatarColors.length];
+}
 
 function timeAgo(dateStr: string): string {
   const now = new Date();
@@ -37,68 +48,197 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id: string) => void; saved?: boolean }) {
-  const src = sourceConfig[job.source] || { label: job.source, emoji: "⚪" };
+  const src = sourceConfig[job.source] || { label: job.source, color: "#6b7280", bg: "#f3f4f6" };
+  const avatarBg = getAvatarColor(job.company_name || "?");
 
   return (
-    <div className="card p-5 hover-lift flex flex-col justify-between animate-fade-up">
-      <Link href={`/jobs/${job.id}`} className="block">
-        <div className="flex items-center justify-between mb-3">
-          <span className="badge" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
-            {src.emoji} {src.label}
-          </span>
-          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{timeAgo(job.created_at)}</span>
-        </div>
+    <div
+      className="animate-fade-up"
+      style={{
+        background: "var(--card)",
+        border: "1px solid var(--border)",
+        borderRadius: "16px",
+        padding: "0",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        transition: "all 0.3s ease",
+        overflow: "hidden",
+        cursor: "pointer",
+        position: "relative",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.12)";
+        e.currentTarget.style.borderColor = src.color;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.borderColor = "var(--border)";
+      }}
+    >
+      {/* Source color top bar */}
+      <div style={{ height: "3px", background: src.color, width: "100%" }} />
 
-        <h3 className="text-[15px] font-bold leading-snug mb-2 line-clamp-2" style={{ color: "var(--text)" }}>
-          {job.title}
-        </h3>
+      <div style={{ padding: "20px" }}>
+        <Link href={`/jobs/${job.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          {/* Header: source badge + time */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+            <span style={{
+              padding: "4px 10px",
+              borderRadius: "6px",
+              fontSize: "11px",
+              fontWeight: 700,
+              color: src.color,
+              background: src.bg,
+              letterSpacing: "0.02em",
+            }}>
+              {src.label}
+            </span>
+            <span style={{ fontSize: "11px", fontWeight: 500, color: "var(--text-muted)" }}>
+              {timeAgo(job.created_at)}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--hover-bg)" }}>
-            <span className="text-sm font-bold" style={{ color: "var(--text-muted)" }}>
+          {/* Title */}
+          <h3 style={{
+            fontSize: "15px",
+            fontWeight: 700,
+            lineHeight: 1.4,
+            marginBottom: "12px",
+            color: "var(--text)",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}>
+            {job.title}
+          </h3>
+
+          {/* Company info */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+            <div style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: avatarBg,
+              color: "white",
+              fontSize: "14px",
+              fontWeight: 800,
+            }}>
               {(job.company_name || "?")[0].toUpperCase()}
-            </span>
+            </div>
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-light)", lineHeight: 1.3 }}>
+                {job.company_name || "Unknown Company"}
+              </p>
+              <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", lineHeight: 1.3 }}>
+                📍 {job.location || job.country || "Remote"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold leading-tight" style={{ color: "var(--text-light)" }}>
-              {job.company_name || "Unknown Company"}
-            </p>
-            <p className="text-xs leading-tight mt-0.5" style={{ color: "var(--text-muted)" }}>
-              {job.location || job.country || "Remote"}
-            </p>
+
+          {/* Tags */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: job.description ? "12px" : "0" }}>
+            {job.country && (
+              <span style={{
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: 500,
+                background: "var(--hover-bg)",
+                color: "var(--text-light)",
+              }}>
+                🌍 {job.country}
+              </span>
+            )}
+            {job.posted_date && (
+              <span style={{
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: 500,
+                background: "var(--hover-bg)",
+                color: "var(--text-light)",
+              }}>
+                📅 {new Date(job.posted_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
           </div>
-        </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {job.country && (
-            <span className="chip" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
-              🌍 {job.country}
-            </span>
+          {/* Description */}
+          {job.description && (
+            <p style={{
+              fontSize: "12px",
+              lineHeight: 1.6,
+              color: "var(--text-muted)",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}>
+              {job.description}
+            </p>
           )}
-          {job.posted_date && (
-            <span className="chip" style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}>
-              📅 {new Date(job.posted_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-            </span>
-          )}
-        </div>
+        </Link>
+      </div>
 
-        {job.description && (
-          <p className="text-[13px] leading-relaxed line-clamp-2 mb-3" style={{ color: "var(--text-muted)" }}>
-            {job.description}
-          </p>
-        )}
-      </Link>
-
-      <div className="flex gap-2 pt-3 mt-auto" style={{ borderTop: "1px solid var(--border)" }}>
-        <a href={job.job_url} target="_blank" rel="noopener noreferrer"
-          className="btn btn-primary flex-1 text-[13px] py-2.5">
+      {/* Actions */}
+      <div style={{
+        display: "flex",
+        gap: "8px",
+        padding: "14px 20px",
+        borderTop: "1px solid var(--border)",
+        background: "var(--hover-bg)",
+      }}>
+        <a
+          href={job.job_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            padding: "8px 16px",
+            borderRadius: "8px",
+            fontSize: "13px",
+            fontWeight: 600,
+            background: "var(--primary)",
+            color: "white",
+            textDecoration: "none",
+            transition: "all 0.2s ease",
+          }}
+        >
           Apply Now →
         </a>
         {onSave && (
-          <button onClick={() => onSave(job.id)}
-            className="btn text-[13px] py-2.5 px-4"
-            style={saved ? { background: "var(--primary)", color: "white" } : { background: "var(--hover-bg)", color: "var(--text-light)", border: "1px solid var(--border)" }}>
-            {saved ? "✓ Saved" : "Save"}
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(job.id); }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "40px",
+              height: "40px",
+              borderRadius: "8px",
+              border: saved ? "none" : "1px solid var(--border)",
+              background: saved ? "#ef4444" : "var(--card)",
+              color: saved ? "white" : "var(--text-muted)",
+              fontSize: "18px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            title={saved ? "Unsave" : "Save"}
+          >
+            {saved ? "♥" : "♡"}
           </button>
         )}
       </div>
