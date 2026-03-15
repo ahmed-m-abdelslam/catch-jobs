@@ -228,35 +228,127 @@ export default function DashboardPage() {
             )}
 
             {/* Notification Bell */}
-            <button className="w-9 h-9 flex items-center justify-center rounded-lg transition relative"
-              style={{ background: "var(--hover-bg)", color: "var(--text-light)" }}
+            <button
+              style={{
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "12px",
+                border: "1px solid var(--border)",
+                background: "var(--card)",
+                color: "var(--text-light)",
+                cursor: "pointer",
+                position: "relative",
+                transition: "all 0.2s ease",
+                fontSize: "18px",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; e.currentTarget.style.transform = "scale(1.05)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--card)"; e.currentTarget.style.transform = "scale(1)"; }}
               title="Notifications">
               🔔
               {notifCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full"
-                  style={{ background: "var(--danger)", color: "white" }}>
+                <span style={{
+                  position: "absolute",
+                  top: "-4px",
+                  right: "-4px",
+                  width: "20px",
+                  height: "20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  color: "white",
+                  border: "2px solid var(--bg)",
+                  animation: "pulse-soft 2s ease infinite",
+                }}>
                   {notifCount > 9 ? "9+" : notifCount}
                 </span>
               )}
             </button>
 
-            {/* User Avatar */}
+            {/* User Avatar & Dropdown */}
             {user && (
-              <div className="hidden sm:flex items-center gap-2.5 rounded-full px-3 py-1.5 cursor-pointer" style={{ background: "var(--hover-bg)" }}>
-                <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">{user.full_name?.[0]?.toUpperCase()}</span>
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => {
+                    const menu = document.getElementById("user-dropdown");
+                    if (menu) menu.style.display = menu.style.display === "none" ? "block" : "none";
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "6px 14px 6px 6px",
+                    borderRadius: "100px",
+                    border: "1px solid var(--border)",
+                    background: "var(--card)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
+                >
+                  <div style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    <span style={{ color: "white", fontSize: "13px", fontWeight: 800 }}>{user.full_name?.[0]?.toUpperCase()}</span>
+                  </div>
+                  <span className="hidden sm:inline" style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>{user.full_name}</span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="hidden sm:inline" style={{ color: "var(--text-muted)" }}>
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                <div id="user-dropdown" style={{
+                  display: "none",
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  minWidth: "200px",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "12px",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                  padding: "8px",
+                  zIndex: 100,
+                }}>
+                  <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)", marginBottom: "4px" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>{user.full_name}</p>
+                    <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{user.email}</p>
+                  </div>
+                  <button onClick={() => { setActiveTab("preferences"); const m = document.getElementById("user-dropdown"); if(m) m.style.display="none"; }}
+                    style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "var(--text-light)", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >⚙️ Preferences</button>
+                  <button onClick={() => { setActiveTab("saved"); const m = document.getElementById("user-dropdown"); if(m) m.style.display="none"; }}
+                    style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "var(--text-light)", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >💾 Saved Jobs</button>
+                  <div style={{ borderTop: "1px solid var(--border)", marginTop: "4px", paddingTop: "4px" }}>
+                    <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
+                      style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "#ef4444", transition: "background 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    >🚪 Logout</button>
+                  </div>
                 </div>
-                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{user.full_name}</span>
               </div>
             )}
 
             <ThemeToggle />
-
-            <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition"
-              style={{ color: "var(--text-muted)" }}>
-              Logout
-            </button>
           </div>
         </div>
       </header>
