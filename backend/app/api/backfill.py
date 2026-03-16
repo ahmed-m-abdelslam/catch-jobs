@@ -58,7 +58,7 @@ async def _backfill_worker(job_ids_and_data: list):
 
         # Pause every job to avoid hogging resources
         if (i + 1) % 5 == 0:
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.1)
 
         if (i + 1) % 100 == 0:
             print(f"  Backfill progress: {_status['done']}/{_status['total']}")
