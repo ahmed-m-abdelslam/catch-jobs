@@ -6,7 +6,6 @@ from app.models.job import Job, JobEmbedding
 from app.services.embedding import get_model
 import uuid
 import asyncio
-import numpy as np
 
 router = APIRouter(prefix="/backfill", tags=["Backfill"])
 
@@ -44,21 +43,18 @@ async def _backfill_worker(job_data: list):
     _status["total"] = len(job_data)
 
     model = get_model()
-    batch_size = 32  # Encode 32 jobs at once
+    batch_size = 32
 
     for i in range(0, len(job_data), batch_size):
         batch = job_data[i:i + batch_size]
-        
+
         try:
-            # Build texts for batch
             texts = [_build_text(j["title"], j["company"], j["description"]) for j in batch]
-            
-            # Encode entire batch at once (MUCH faster)
             embeddings = model.encode(texts, show_progress_bar=False)
-            
-            # Save each embedding
-            for j, emb in zip(batch, embeddings):
-                async with async_session() as session:
+
+            # One session for the entire batch
+            async with async_session() as session:
+                for j, emb in zip(batch, embeddings):
                     try:
                         job_emb = JobEmbedding(
                             id=uuid.uuid4(),
@@ -66,19 +62,21 @@ async def _backfill_worker(job_data: list):
                             embedding=emb.tolist(),
                         )
                         session.add(job_emb)
-                        await session.commit()
                         _status["done"] += 1
                     except Exception as e:
-                        await session.rollback()
                         _status["errors"] += 1
-            
+                        print(f"  Error adding {j['id']}: {e}")
+
+                await session.commit()
+
             print(f"  Batch {i//batch_size + 1}: {_status['done']}/{_status['total']} done")
-            
+
         except Exception as e:
             _status["errors"] += len(batch)
-            print(f"  Batch encode error: {e}")
-        
-        await asyncio.sleep(0.05)
+            print(f"  Batch error: {type(e).__name__}: {str(e)[:100]}")
+
+        # Small pause to let other requests use the connection pool
+        await asyncio.sleep(1)
 
     _status["running"] = False
     print(f"Backfill complete: {_status['done']} done, {_status['errors']} errors")
