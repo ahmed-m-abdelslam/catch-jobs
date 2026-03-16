@@ -5,8 +5,12 @@ from app.database import get_db, async_session
 from app.models.job import Job, JobEmbedding
 from app.services.embedding import generate_embedding_for_job
 import uuid
+import asyncio
 
 router = APIRouter(prefix="/backfill", tags=["Backfill"])
+
+# Track background task status
+_status = {"running": False, "done": 0, "errors": 0, "total": 0}
 
 
 @router.get("/embedding-stats")
@@ -17,19 +21,61 @@ async def embedding_stats(db: AsyncSession = Depends(get_db)):
         "total_jobs": total or 0,
         "with_embeddings": with_emb or 0,
         "without_embeddings": (total or 0) - (with_emb or 0),
+        "backfill_status": _status,
     }
 
 
+async def _backfill_worker(job_ids_and_data: list):
+    """Background worker that embeds jobs one at a time with pauses."""
+    global _status
+    _status["running"] = True
+    _status["done"] = 0
+    _status["errors"] = 0
+    _status["total"] = len(job_ids_and_data)
+
+    for i, job in enumerate(job_ids_and_data):
+        try:
+            embedding = generate_embedding_for_job(
+                title=job["title"] or "",
+                company=job["company"] or "",
+                description=(job["description"] or "")[:500],
+            )
+
+            async with async_session() as session:
+                job_emb = JobEmbedding(
+                    id=uuid.uuid4(),
+                    job_id=job["id"],
+                    embedding=embedding,
+                )
+                session.add(job_emb)
+                await session.commit()
+
+            _status["done"] += 1
+
+        except Exception as e:
+            _status["errors"] += 1
+            print(f"  Error {job['id']}: {type(e).__name__}")
+
+        # Pause every job to avoid hogging resources
+        if (i + 1) % 5 == 0:
+            await asyncio.sleep(0.5)
+
+        if (i + 1) % 100 == 0:
+            print(f"  Backfill progress: {_status['done']}/{_status['total']}")
+
+    _status["running"] = False
+    print(f"Backfill complete: {_status['done']} done, {_status['errors']} errors")
+
+
 @router.post("/backfill-embeddings")
-async def backfill_embeddings(batch_size: int = 10):
-    """Generate embeddings one by one with individual commits."""
-    from app.database import async_session
+async def backfill_embeddings(limit: int = 500):
+    """Start background backfill. Returns immediately."""
+    global _status
 
-    total_done = 0
-    total_errors = 0
-    max_jobs = batch_size * 50  # Process up to 500 jobs per call
+    if _status["running"]:
+        return {"message": "Backfill already running", "status": _status}
 
-    # Get list of job IDs without embeddings using a fresh session
+    # Fetch job data
     async with async_session() as session:
         result = await session.execute(
             text("""
@@ -39,43 +85,22 @@ async def backfill_embeddings(batch_size: int = 10):
                 WHERE je.id IS NULL
                 LIMIT :lim
             """),
-            {"lim": max_jobs}
+            {"lim": limit}
         )
-        jobs_to_process = result.fetchall()
+        rows = result.fetchall()
 
-    if not jobs_to_process:
-        return {"embedded": 0, "errors": 0, "message": "All jobs already have embeddings!"}
+    if not rows:
+        return {"message": "All jobs already have embeddings!", "status": _status}
 
-    print(f"Starting backfill for {len(jobs_to_process)} jobs...")
+    job_data = [
+        {"id": r.id, "title": r.title, "company": r.company_name, "description": r.description}
+        for r in rows
+    ]
 
-    for i, job in enumerate(jobs_to_process):
-        # Each job gets its own session and transaction
-        async with async_session() as session:
-            try:
-                embedding = generate_embedding_for_job(
-                    title=job.title or "",
-                    company=job.company_name or "",
-                    description=(job.description or "")[:500],
-                )
+    # Start background task
+    asyncio.create_task(_backfill_worker(job_data))
 
-                # Use ORM insert instead of raw SQL
-                job_emb = JobEmbedding(
-                    id=uuid.uuid4(),
-                    job_id=job.id,
-                    embedding=embedding,
-                )
-                session.add(job_emb)
-                await session.commit()
-                total_done += 1
-
-                if (total_done) % 50 == 0:
-                    print(f"  Progress: {total_done}/{len(jobs_to_process)} done")
-
-            except Exception as e:
-                await session.rollback()
-                total_errors += 1
-                print(f"  Error embedding {job.id}: {type(e).__name__}: {str(e)[:100]}")
-
-    msg = f"Done! Embedded {total_done} jobs with {total_errors} errors. Remaining: {len(jobs_to_process) - total_done - total_errors}"
-    print(msg)
-    return {"embedded": total_done, "errors": total_errors, "message": msg}
+    return {
+        "message": f"Backfill started for {len(job_data)} jobs. Check /backfill/embedding-stats for progress.",
+        "total": len(job_data),
+    }
