@@ -4,6 +4,15 @@ import numpy as np
 # Load model once at startup (384 dimensions, ~80MB)
 _model = None
 
+
+def get_model():
+    global _model
+    if _model is None:
+        print("Loading sentence-transformers model...")
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+        print("Model loaded!")
+    return _model
+
 def _get_model():
     global _model
     if _model is None:
