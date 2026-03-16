@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.job import JobEmbedding
 from app.services.embedding import generate_embedding_for_job
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(prefix="/backfill", tags=["Backfill"])
 
 
 @router.post("/backfill-embeddings")
