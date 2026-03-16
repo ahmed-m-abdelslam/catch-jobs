@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text, select, func
-from app.database import get_db, engine
+from sqlalchemy import select, func, text
+from app.database import get_db, async_session
 from app.models.job import Job, JobEmbedding
 from app.services.embedding import generate_embedding_for_job
+import uuid
 
 router = APIRouter(prefix="/backfill", tags=["Backfill"])
 
@@ -20,62 +21,61 @@ async def embedding_stats(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/backfill-embeddings")
-async def backfill_embeddings(batch_size: int = 20):
-    """Generate embeddings in small batches with fresh DB sessions."""
+async def backfill_embeddings(batch_size: int = 10):
+    """Generate embeddings one by one with individual commits."""
     from app.database import async_session
-    
+
     total_done = 0
     total_errors = 0
-    
-    for batch_num in range(500):  # Max 500 batches = 10000 jobs
+    max_jobs = batch_size * 50  # Process up to 500 jobs per call
+
+    # Get list of job IDs without embeddings using a fresh session
+    async with async_session() as session:
+        result = await session.execute(
+            text("""
+                SELECT j.id, j.title, j.company_name, j.description
+                FROM jobs j
+                LEFT JOIN job_embeddings je ON j.id = je.job_id
+                WHERE je.id IS NULL
+                LIMIT :lim
+            """),
+            {"lim": max_jobs}
+        )
+        jobs_to_process = result.fetchall()
+
+    if not jobs_to_process:
+        return {"embedded": 0, "errors": 0, "message": "All jobs already have embeddings!"}
+
+    print(f"Starting backfill for {len(jobs_to_process)} jobs...")
+
+    for i, job in enumerate(jobs_to_process):
+        # Each job gets its own session and transaction
         async with async_session() as session:
             try:
-                # Get jobs without embeddings
-                result = await session.execute(
-                    text("""
-                        SELECT j.id, j.title, j.company_name, j.description
-                        FROM jobs j
-                        LEFT JOIN job_embeddings je ON j.id = je.job_id
-                        WHERE je.id IS NULL
-                        LIMIT :limit
-                    """),
-                    {"limit": batch_size}
+                embedding = generate_embedding_for_job(
+                    title=job.title or "",
+                    company=job.company_name or "",
+                    description=(job.description or "")[:500],
                 )
-                jobs = result.fetchall()
-                
-                if not jobs:
-                    break
-                
-                for job in jobs:
-                    try:
-                        embedding = generate_embedding_for_job(
-                            title=job.title or "",
-                            company=job.company_name or "",
-                            description=(job.description or "")[:500],
-                        )
-                        await session.execute(
-                            text("""
-                                INSERT INTO job_embeddings (id, job_id, embedding)
-                                VALUES (gen_random_uuid(), :job_id, :embedding)
-                                ON CONFLICT (job_id) DO NOTHING
-                            """),
-                            {"job_id": str(job.id), "embedding": str(embedding)}
-                        )
-                        total_done += 1
-                    except Exception as e:
-                        total_errors += 1
-                        print(f"Error embedding {job.id}: {e}")
-                
+
+                # Use ORM insert instead of raw SQL
+                job_emb = JobEmbedding(
+                    id=uuid.uuid4(),
+                    job_id=job.id,
+                    embedding=embedding,
+                )
+                session.add(job_emb)
                 await session.commit()
-                print(f"Batch {batch_num + 1}: {total_done} done, {total_errors} errors")
-                
+                total_done += 1
+
+                if (total_done) % 50 == 0:
+                    print(f"  Progress: {total_done}/{len(jobs_to_process)} done")
+
             except Exception as e:
-                print(f"Batch {batch_num + 1} failed: {e}")
                 await session.rollback()
                 total_errors += 1
-    
-    return {
-        "embedded": total_done,
-        "errors": total_errors,
-        "message": f"Done! Embedded {total_done} jobs with {total_errors} errors"
-    }
+                print(f"  Error embedding {job.id}: {type(e).__name__}: {str(e)[:100]}")
+
+    msg = f"Done! Embedded {total_done} jobs with {total_errors} errors. Remaining: {len(jobs_to_process) - total_done - total_errors}"
+    print(msg)
+    return {"embedded": total_done, "errors": total_errors, "message": msg}
