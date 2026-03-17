@@ -7,10 +7,10 @@ from app.models.preference import UserPreference
 from app.services.embedding import generate_embedding_for_preference
 
 # Minimum similarity to include a job
-MIN_THRESHOLD = 0.45
+MIN_THRESHOLD = 0.60
 
 # Bonus for title keyword match
-TITLE_KEYWORD_BOOST = 0.15
+TITLE_KEYWORD_BOOST = 0.10
 
 
 def _extract_keywords(text_str: str) -> set:
