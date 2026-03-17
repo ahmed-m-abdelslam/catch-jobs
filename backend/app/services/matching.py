@@ -7,7 +7,7 @@ from app.models.preference import UserPreference
 from app.services.embedding import generate_embedding_for_preference
 
 # Minimum similarity to include a job
-MIN_THRESHOLD = 0.60
+MIN_THRESHOLD = 0.65
 
 # Bonus for title keyword match
 TITLE_KEYWORD_BOOST = 0.10
@@ -22,6 +22,10 @@ def _extract_keywords(text_str: str) -> set:
     return {w for w in words if len(w) > 2 and w not in stop_words}
 
 
+# Generic words that shouldn't boost on their own
+GENERIC_WORDS = {"engineer", "manager", "senior", "junior", "lead", "specialist", "analyst", "developer", "consultant", "director", "officer", "associate", "assistant", "intern", "head", "chief", "staff"}
+
+
 def _calculate_boosted_score(base_score: float, job_title: str, pref_keywords: set) -> float:
     """Boost score if job title contains preference keywords."""
     if not pref_keywords or not job_title:
@@ -33,16 +37,25 @@ def _calculate_boosted_score(base_score: float, job_title: str, pref_keywords: s
     if not matching:
         return base_score
 
-    match_ratio = len(matching) / len(pref_keywords)
+    # Filter out generic words from matching
+    meaningful_matches = matching - GENERIC_WORDS
+    meaningful_pref = pref_keywords - GENERIC_WORDS
+
+    if not meaningful_pref:
+        # All pref keywords are generic, use full match ratio
+        match_ratio = len(matching) / len(pref_keywords)
+    elif meaningful_matches:
+        # Boost based on meaningful keyword matches
+        match_ratio = len(meaningful_matches) / len(meaningful_pref)
+    else:
+        # Only generic words matched — no boost
+        return base_score
 
     if match_ratio >= 0.8:
-        # Almost all keywords match — strong boost
         boost = TITLE_KEYWORD_BOOST
     elif match_ratio >= 0.5:
-        # Half keywords match — medium boost
         boost = TITLE_KEYWORD_BOOST * 0.5
     else:
-        # Only 1 generic word matches (like "engineer") — tiny boost
         boost = TITLE_KEYWORD_BOOST * 0.1
 
     return min(base_score + boost, 1.0)
