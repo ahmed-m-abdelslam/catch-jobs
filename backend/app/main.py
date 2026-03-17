@@ -27,12 +27,12 @@ async def lifespan(app: FastAPI):
                 WHERE pg_class.relname = 'job_embeddings' AND pg_attribute.attname = 'embedding'
             """))
             row = result.fetchone()
-            if row and row[0] == 1536:
-                print("Migrating embeddings from 1536 to 1536 dimensions...")
+            if row and row[0] == 384:
+                print("Migrating embeddings from 384 to 1536 dimensions...")
                 await conn.execute(text("DELETE FROM job_embeddings"))
                 await conn.execute(text("ALTER TABLE job_embeddings ALTER COLUMN embedding TYPE vector(1536)"))
                 print("Migration complete!")
-            elif row and row[0] == 384:
+            elif row and row[0] == 1536:
                 print("Embeddings already at 1536 dimensions.")
             else:
                 print(f"Embedding column dimension: {row[0] if row else 'unknown'}")
