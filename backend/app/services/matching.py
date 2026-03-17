@@ -1,9 +1,42 @@
 import uuid
+import re
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text, bindparam
+from sqlalchemy import select, text
 from app.models.job import Job, JobEmbedding
 from app.models.preference import UserPreference
 from app.services.embedding import generate_embedding_for_preference
+
+# Minimum similarity to include a job
+MIN_THRESHOLD = 0.45
+
+# Bonus for title keyword match
+TITLE_KEYWORD_BOOST = 0.15
+
+
+def _extract_keywords(text_str: str) -> set:
+    """Extract meaningful keywords from preference title."""
+    if not text_str:
+        return set()
+    stop_words = {"the", "a", "an", "and", "or", "in", "at", "of", "for", "to", "is", "with", "on", "by"}
+    words = re.findall(r'[a-zA-Z]+', text_str.lower())
+    return {w for w in words if len(w) > 2 and w not in stop_words}
+
+
+def _calculate_boosted_score(base_score: float, job_title: str, pref_keywords: set) -> float:
+    """Boost score if job title contains preference keywords."""
+    if not pref_keywords or not job_title:
+        return base_score
+
+    job_words = set(re.findall(r'[a-zA-Z]+', job_title.lower()))
+    matching = pref_keywords & job_words
+
+    if matching:
+        # Boost proportional to how many keywords match
+        match_ratio = len(matching) / len(pref_keywords)
+        boost = TITLE_KEYWORD_BOOST * match_ratio
+        return min(base_score + boost, 1.0)
+
+    return base_score
 
 
 async def get_recommended_jobs_for_user(
@@ -33,6 +66,10 @@ async def get_recommended_jobs_for_user(
         )
 
         embedding_str = "[" + ",".join(str(x) for x in pref_embedding) + "]"
+        pref_keywords = _extract_keywords(pref.job_title)
+
+        # Fetch more candidates than needed, then filter
+        fetch_limit = limit * 3
 
         if pref.country:
             query = text(
@@ -45,7 +82,7 @@ async def get_recommended_jobs_for_user(
                 "ORDER BY je.embedding <=> cast(:emb as vector) "
                 "LIMIT :lim"
             )
-            rows_result = await db.execute(query, {"emb": embedding_str, "country": f"%{pref.country}%", "lim": limit})
+            rows_result = await db.execute(query, {"emb": embedding_str, "country": f"%{pref.country}%", "lim": fetch_limit})
         else:
             query = text(
                 "SELECT j.id, j.title, j.company_name, j.location, j.country, "
@@ -56,11 +93,20 @@ async def get_recommended_jobs_for_user(
                 "ORDER BY je.embedding <=> cast(:emb as vector) "
                 "LIMIT :lim"
             )
-            rows_result = await db.execute(query, {"emb": embedding_str, "lim": limit})
+            rows_result = await db.execute(query, {"emb": embedding_str, "lim": fetch_limit})
 
         rows = rows_result.fetchall()
 
         for row in rows:
+            base_score = float(row.similarity_score)
+
+            # Skip low-relevance jobs
+            if base_score < MIN_THRESHOLD:
+                continue
+
+            # Boost score based on keyword match
+            boosted_score = _calculate_boosted_score(base_score, row.title, pref_keywords)
+
             all_jobs.append({
                 "id": row.id,
                 "title": row.title,
@@ -72,9 +118,10 @@ async def get_recommended_jobs_for_user(
                 "source": row.source,
                 "posted_date": row.posted_date,
                 "created_at": row.created_at,
-                "similarity_score": round(float(row.similarity_score), 4),
+                "similarity_score": round(boosted_score, 4),
             })
 
+    # Deduplicate keeping highest score
     seen = {}
     for job in all_jobs:
         jid = job["id"]
