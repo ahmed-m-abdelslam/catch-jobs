@@ -42,6 +42,6 @@ class JobEmbedding(Base):
     job_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    embedding = mapped_column(Vector(384), nullable=False)
+    embedding = mapped_column(Vector(1536), nullable=False)
 
     job = relationship("Job", back_populates="embedding")

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
 from app.database import get_db, async_session
 from app.models.job import Job, JobEmbedding
-from app.services.embedding import get_model
+from app.services.embedding import generate_embedding_for_job
 import uuid
 import asyncio
 
@@ -24,17 +24,6 @@ async def embedding_stats(db: AsyncSession = Depends(get_db)):
     }
 
 
-def _build_text(title, company, description):
-    parts = []
-    if title:
-        parts.append(f"Job Title: {title}")
-    if company:
-        parts.append(f"Company: {company}")
-    if description:
-        parts.append(f"Description: {description[:500]}")
-    return " | ".join(parts) if parts else "Unknown Job"
-
-
 async def _backfill_worker(job_data: list):
     global _status
     _status["running"] = True
@@ -42,41 +31,40 @@ async def _backfill_worker(job_data: list):
     _status["errors"] = 0
     _status["total"] = len(job_data)
 
-    model = get_model()
-    batch_size = 32
-
-    for i in range(0, len(job_data), batch_size):
-        batch = job_data[i:i + batch_size]
-
+    for i, job in enumerate(job_data):
         try:
-            texts = [_build_text(j["title"], j["company"], j["description"]) for j in batch]
-            embeddings = model.encode(texts, show_progress_bar=False)
+            embedding = generate_embedding_for_job(
+                title=job["title"] or "",
+                company=job["company"] or "",
+                description=(job["description"] or "")[:500],
+            )
 
-            # One session for the entire batch
+            # Skip if embedding is all zeros (error)
+            if all(x == 0.0 for x in embedding[:10]):
+                _status["errors"] += 1
+                continue
+
             async with async_session() as session:
-                for j, emb in zip(batch, embeddings):
-                    try:
-                        job_emb = JobEmbedding(
-                            id=uuid.uuid4(),
-                            job_id=j["id"],
-                            embedding=emb.tolist(),
-                        )
-                        session.add(job_emb)
-                        _status["done"] += 1
-                    except Exception as e:
-                        _status["errors"] += 1
-                        print(f"  Error adding {j['id']}: {e}")
-
+                job_emb = JobEmbedding(
+                    id=uuid.uuid4(),
+                    job_id=job["id"],
+                    embedding=embedding,
+                )
+                session.add(job_emb)
                 await session.commit()
 
-            print(f"  Batch {i//batch_size + 1}: {_status['done']}/{_status['total']} done")
+            _status["done"] += 1
+
+            if (_status["done"]) % 100 == 0:
+                print(f"  Backfill progress: {_status['done']}/{_status['total']}")
 
         except Exception as e:
-            _status["errors"] += len(batch)
-            print(f"  Batch error: {type(e).__name__}: {str(e)[:100]}")
+            _status["errors"] += 1
+            print(f"  Error {job['id']}: {type(e).__name__}: {str(e)[:100]}")
 
-        # Small pause to let other requests use the connection pool
-        await asyncio.sleep(1)
+        # Rate limit for OpenAI API (3000 RPM = 50/sec)
+        if (i + 1) % 50 == 0:
+            await asyncio.sleep(1)
 
     _status["running"] = False
     print(f"Backfill complete: {_status['done']} done, {_status['errors']} errors")
@@ -113,3 +101,12 @@ async def backfill_embeddings(limit: int = 2000):
     asyncio.create_task(_backfill_worker(job_data))
 
     return {"message": f"Backfill started for {len(job_data)} jobs.", "total": len(job_data)}
+
+
+@router.post("/clear-embeddings")
+async def clear_embeddings():
+    """Delete all embeddings to start fresh."""
+    async with async_session() as session:
+        await session.execute(text("DELETE FROM job_embeddings"))
+        await session.commit()
+    return {"message": "All embeddings deleted!"}

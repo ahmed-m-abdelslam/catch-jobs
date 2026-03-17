@@ -1,55 +1,55 @@
-from sentence_transformers import SentenceTransformer
-import numpy as np
+from openai import OpenAI
+from app.config import get_settings
 
-# Load model once at startup (384 dimensions, ~80MB)
-_model = None
+_client = None
 
-
-def get_model():
-    global _model
-    if _model is None:
-        print("Loading sentence-transformers model...")
-        _model = SentenceTransformer('all-MiniLM-L6-v2')
-        print("Model loaded!")
-    return _model
-
-def _get_model():
-    global _model
-    if _model is None:
-        print("Loading sentence-transformers model...")
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-        print("Model loaded!")
-    return _model
+def _get_client():
+    global _client
+    if _client is None:
+        settings = get_settings()
+        _client = OpenAI(api_key=settings.openai_api_key)
+        print("OpenAI client initialized!")
+    return _client
 
 
 def generate_embedding(text: str) -> list[float]:
-    """Generate a 384-dimensional embedding using sentence-transformers."""
-    text = text.replace("\n", " ").strip()
-    if not text:
-        return [0.0] * 384
+    """Generate a 1536-dimensional embedding using OpenAI."""
+    try:
+        client = _get_client()
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text[:8000],
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"OpenAI embedding error: {e}")
+        return [0.0] * 1536
 
-    model = _get_model()
-    embedding = model.encode(text, normalize_embeddings=True)
-    return embedding.tolist()
 
-
-def generate_embedding_for_job(title: str, company: str | None, description: str | None) -> list[float]:
-    """Compose a rich text representation of the job, then embed it."""
-    parts = [f"Job Title: {title}"]
+def generate_embedding_for_job(title: str, company: str, description: str) -> list[float]:
+    parts = []
+    if title:
+        parts.append(f"Job Title: {title}")
     if company:
         parts.append(f"Company: {company}")
     if description:
-        parts.append(f"Description: {description[:2000]}")
-    text = "\n".join(parts)
+        parts.append(f"Description: {description[:500]}")
+    text = " | ".join(parts) if parts else "Unknown Job"
     return generate_embedding(text)
 
 
-def generate_embedding_for_preference(job_title: str, country: str | None, experience: str | None) -> list[float]:
-    """Create a query embedding from a user preference."""
-    parts = [f"Looking for: {job_title}"]
+def generate_embedding_for_preference(job_title: str, country: str = None, experience: str = None) -> list[float]:
+    parts = []
+    if job_title:
+        parts.append(f"Job Title: {job_title}")
     if country:
         parts.append(f"Country: {country}")
     if experience:
-        parts.append(f"Experience level: {experience}")
-    text = "\n".join(parts)
+        parts.append(f"Experience: {experience}")
+    text = " | ".join(parts) if parts else "Unknown Preference"
     return generate_embedding(text)
+
+
+def get_model():
+    """Compatibility function - returns None for OpenAI mode."""
+    return None

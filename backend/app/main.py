@@ -28,12 +28,12 @@ async def lifespan(app: FastAPI):
             """))
             row = result.fetchone()
             if row and row[0] == 1536:
-                print("Migrating embeddings from 1536 to 384 dimensions...")
+                print("Migrating embeddings from 1536 to 1536 dimensions...")
                 await conn.execute(text("DELETE FROM job_embeddings"))
-                await conn.execute(text("ALTER TABLE job_embeddings ALTER COLUMN embedding TYPE vector(384)"))
+                await conn.execute(text("ALTER TABLE job_embeddings ALTER COLUMN embedding TYPE vector(1536)"))
                 print("Migration complete!")
             elif row and row[0] == 384:
-                print("Embeddings already at 384 dimensions.")
+                print("Embeddings already at 1536 dimensions.")
             else:
                 print(f"Embedding column dimension: {row[0] if row else 'unknown'}")
         except Exception as e:
