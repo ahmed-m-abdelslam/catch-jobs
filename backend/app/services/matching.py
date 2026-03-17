@@ -30,13 +30,22 @@ def _calculate_boosted_score(base_score: float, job_title: str, pref_keywords: s
     job_words = set(re.findall(r'[a-zA-Z]+', job_title.lower()))
     matching = pref_keywords & job_words
 
-    if matching:
-        # Boost proportional to how many keywords match
-        match_ratio = len(matching) / len(pref_keywords)
-        boost = TITLE_KEYWORD_BOOST * match_ratio
-        return min(base_score + boost, 1.0)
+    if not matching:
+        return base_score
 
-    return base_score
+    match_ratio = len(matching) / len(pref_keywords)
+
+    if match_ratio >= 0.8:
+        # Almost all keywords match — strong boost
+        boost = TITLE_KEYWORD_BOOST
+    elif match_ratio >= 0.5:
+        # Half keywords match — medium boost
+        boost = TITLE_KEYWORD_BOOST * 0.5
+    else:
+        # Only 1 generic word matches (like "engineer") — tiny boost
+        boost = TITLE_KEYWORD_BOOST * 0.1
+
+    return min(base_score + boost, 1.0)
 
 
 async def get_recommended_jobs_for_user(
