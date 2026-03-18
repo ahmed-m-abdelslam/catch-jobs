@@ -203,11 +203,29 @@ async def _run_scrape(sources=None):
     else:
         scrapers = all_scrapers
 
+    # Default search terms
     terms = [
         "software engineer", "data scientist", "frontend developer",
         "backend developer", "devops engineer", "data analyst",
-        "product manager", "UI/UX designer"
+        "product manager", "UI/UX designer", "machine learning engineer",
+        "AI engineer", "full stack developer", "cloud engineer",
+        "cybersecurity", "mobile developer", "QA engineer",
+        "data engineer", "python developer", "java developer",
+        "system administrator", "network engineer",
     ]
+
+    # Add user preference terms dynamically
+    try:
+        import asyncpg
+        url = get_db_url()
+        conn = await asyncpg.connect(url, ssl=get_ssl_context())
+        prefs = await conn.fetch("SELECT DISTINCT job_title FROM user_preferences")
+        await conn.close()
+        user_terms = [p["job_title"] for p in prefs if p["job_title"]]
+        terms = list(set(terms + user_terms))
+        logger.warning(f"[Terms] {len(terms)} search terms ({len(user_terms)} from user preferences)")
+    except Exception as e:
+        logger.warning(f"[Terms] Could not load user prefs: {e}")
 
     results = []
     total_new = 0
