@@ -7,7 +7,7 @@ from app.models.preference import UserPreference
 from app.services.embedding import generate_embedding_for_preference
 
 # Minimum similarity to include a job
-MIN_THRESHOLD = 0.68
+MIN_THRESHOLD = 0.65
 
 # Bonus for title keyword match
 TITLE_KEYWORD_BOOST = 0.10
@@ -64,7 +64,7 @@ def _calculate_boosted_score(base_score: float, job_title: str, pref_keywords: s
 async def get_recommended_jobs_for_user(
     user_id: uuid.UUID,
     db: AsyncSession,
-    limit: int = 50,
+    limit: int = 100,
 ) -> list[dict]:
     result = await db.execute(
         select(UserPreference).where(UserPreference.user_id == user_id)
@@ -91,7 +91,7 @@ async def get_recommended_jobs_for_user(
         pref_keywords = _extract_keywords(pref.job_title)
 
         # Fetch more candidates than needed, then filter
-        fetch_limit = limit * 3
+        fetch_limit = limit * 10
 
         if pref.country:
             query = text(
