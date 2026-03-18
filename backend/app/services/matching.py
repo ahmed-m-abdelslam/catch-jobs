@@ -144,12 +144,24 @@ async def get_recommended_jobs_for_user(
                 "similarity_score": round(boosted_score, 4),
             })
 
-    # Deduplicate keeping highest score
-    seen = {}
+    # Deduplicate by ID first
+    seen_ids = {}
     for job in all_jobs:
         jid = job["id"]
-        if jid not in seen or job["similarity_score"] > seen[jid]["similarity_score"]:
-            seen[jid] = job
+        if jid not in seen_ids or job["similarity_score"] > seen_ids[jid]["similarity_score"]:
+            seen_ids[jid] = job
+
+    # Then deduplicate by title+company (keep newest)
+    seen_title = {}
+    for job in seen_ids.values():
+        key = (job.get("title", "").strip().lower(), job.get("company", "").strip().lower())
+        if key not in seen_title:
+            seen_title[key] = job
+        else:
+            existing = seen_title[key]
+            # Keep the newer one
+            if (job.get("created_at") or "") > (existing.get("created_at") or ""):
+                seen_title[key] = job
 
     # Sort by date (newest first) after AI filtering
-    return sorted(seen.values(), key=lambda x: x.get("created_at") or "", reverse=True)[:limit]
+    return sorted(seen_title.values(), key=lambda x: x.get("created_at") or "", reverse=True)[:limit]

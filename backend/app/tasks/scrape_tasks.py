@@ -124,7 +124,9 @@ async def create_notifications_for_new_jobs(new_job_ids):
 
         for pref in prefs:
             try:
-                pref_embedding = generate_embedding_for_preference(
+                pref_embedding = await generate_embedding_for_preference(
+                    pref["job_title"], pref["country"]
+                ) if asyncio.iscoroutinefunction(generate_embedding_for_preference) else generate_embedding_for_preference(
                     pref["job_title"], pref["country"]
                 )
                 emb_str = "[" + ",".join(str(x) for x in pref_embedding) + "]"
@@ -146,6 +148,21 @@ async def create_notifications_for_new_jobs(new_job_ids):
                                 ON CONFLICT DO NOTHING
                             """, pref["user_id"], job["id"])
                             notif_count += 1
+                            # Send email notification
+                            try:
+                                user_row = await conn.fetchrow("SELECT email, full_name FROM users WHERE id = $1", pref["user_id"])
+                                job_row = await conn.fetchrow("SELECT title, company, job_url FROM jobs WHERE id = $1", job["id"])
+                                if user_row and job_row and user_row["email"]:
+                                    from app.services.notification import send_email_notification
+                                    await send_email_notification(
+                                        user_row["email"],
+                                        user_row["full_name"] or "User",
+                                        job_row["title"],
+                                        job_row["company"] or "",
+                                        job_row["job_url"] or ""
+                                    )
+                            except Exception:
+                                pass
                     except Exception as e:
                         pass
 
