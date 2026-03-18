@@ -259,7 +259,36 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
         </a>
         {onSave && (
           <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(job.id); }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const btn = e.currentTarget;
+              btn.style.transform = "scale(1.4)";
+              setTimeout(() => { btn.style.transform = "scale(1)"; }, 250);
+              onSave(job.id);
+            }}
+            onMouseEnter={(e) => {
+              const btn = e.currentTarget;
+              if (!saved) {
+                btn.style.background = "#fee2e2";
+                btn.style.color = "#ef4444";
+                btn.style.borderColor = "#fca5a5";
+                btn.style.transform = "scale(1.1)";
+              } else {
+                btn.style.transform = "scale(1.1)";
+                btn.style.boxShadow = "0 6px 16px rgba(239,68,68,0.4)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              const btn = e.currentTarget;
+              if (!saved) {
+                btn.style.background = "var(--card)";
+                btn.style.color = "var(--text-muted)";
+                btn.style.borderColor = "var(--border)";
+              }
+              btn.style.transform = "scale(1)";
+              btn.style.boxShadow = saved ? "0 4px 12px rgba(239,68,68,0.3)" : "none";
+            }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -268,11 +297,12 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
               height: "40px",
               borderRadius: "8px",
               border: saved ? "none" : "1px solid var(--border)",
-              background: saved ? "#ef4444" : "var(--card)",
+              background: saved ? "linear-gradient(135deg, #ef4444, #f97316)" : "var(--card)",
               color: saved ? "white" : "var(--text-muted)",
-              fontSize: "18px",
+              fontSize: "20px",
               cursor: "pointer",
-              transition: "all 0.2s ease",
+              transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+              boxShadow: saved ? "0 4px 12px rgba(239,68,68,0.3)" : "none",
             }}
             title={saved ? "Unsave" : "Save"}
           >
