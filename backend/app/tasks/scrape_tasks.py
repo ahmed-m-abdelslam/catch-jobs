@@ -164,7 +164,8 @@ async def scrape_source(scraper, terms, max_pages=2):
     all_jobs = []
     for term in terms:
         try:
-            jobs = await scraper.scrape(term, max_pages=max_pages)
+            # Pass term as list since scrapers expect list[str]
+            jobs = await scraper.scrape([term], max_pages=max_pages)
             all_jobs.extend(jobs)
         except Exception as e:
             logger.warning(f"[{scraper.__class__.__name__}] Error '{term}': {e}")
