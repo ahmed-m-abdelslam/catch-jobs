@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 interface Job {
   id: string;
@@ -50,6 +51,8 @@ function timeAgo(dateStr: string): string {
 export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id: string) => void; saved?: boolean }) {
   const src = sourceConfig[job.source] || { label: job.source, color: "#6b7280", bg: "#f3f4f6" };
   const avatarBg = getAvatarColor(job.company_name || "?");
+  const [expanded, setExpanded] = useState(false);
+  const hasLongDesc = job.description && job.description.length > 120;
 
   return (
     <div
@@ -61,11 +64,12 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
         padding: "0",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
         transition: "all 0.3s ease",
         overflow: "hidden",
         cursor: "pointer",
         position: "relative",
+        height: expanded ? "auto" : "320px",
+        minHeight: "320px",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-4px)";
@@ -79,12 +83,13 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
       }}
     >
       {/* Source color top bar */}
-      <div style={{ height: "3px", background: src.color, width: "100%" }} />
+      <div style={{ height: "3px", background: src.color, width: "100%", flexShrink: 0 }} />
 
-      <div style={{ padding: "20px" }}>
-        <Link href={`/jobs/${job.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+      {/* Content area - fixed height */}
+      <div style={{ padding: "20px", flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Link href={`/jobs/${job.id}`} style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", flex: 1 }}>
           {/* Header: source badge + time */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", flexShrink: 0 }}>
             <span style={{
               padding: "4px 10px",
               borderRadius: "6px",
@@ -101,7 +106,7 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
             </span>
           </div>
 
-          {/* Title */}
+          {/* Title - max 2 lines */}
           <h3 style={{
             fontSize: "15px",
             fontWeight: 700,
@@ -112,12 +117,13 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            flexShrink: 0,
           }}>
             {job.title}
           </h3>
 
           {/* Company info */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", flexShrink: 0 }}>
             <div style={{
               width: "36px",
               height: "36px",
@@ -133,18 +139,26 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
             }}>
               {(job.company_name || "?")[0].toUpperCase()}
             </div>
-            <div>
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-light)", lineHeight: 1.3 }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text-light)",
+                lineHeight: 1.3,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}>
                 {job.company_name || "Unknown Company"}
               </p>
-              <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", lineHeight: 1.3 }}>
+              <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 📍 {job.location || job.country || "Remote"}
               </p>
             </div>
           </div>
 
           {/* Tags */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: job.description ? "12px" : "0" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px", flexShrink: 0 }}>
             {job.country && (
               <span style={{
                 padding: "3px 8px",
@@ -171,30 +185,54 @@ export default function JobCard({ job, onSave, saved }: { job: Job; onSave?: (id
             )}
           </div>
 
-          {/* Description */}
+          {/* Description - clipped or expanded */}
           {job.description && (
-            <p style={{
-              fontSize: "12px",
-              lineHeight: 1.6,
-              color: "var(--text-muted)",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}>
-              {job.description}
-            </p>
+            <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+              <p style={{
+                fontSize: "12px",
+                lineHeight: 1.6,
+                color: "var(--text-muted)",
+                display: expanded ? "block" : "-webkit-box",
+                WebkitLineClamp: expanded ? undefined : 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}>
+                {job.description}
+              </p>
+            </div>
           )}
         </Link>
+
+        {/* Show more/less button */}
+        {hasLongDesc && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(!expanded); }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: "4px 0",
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "var(--primary)",
+              cursor: "pointer",
+              textAlign: "left",
+              flexShrink: 0,
+              marginTop: "4px",
+            }}
+          >
+            {expanded ? "Show less ↑" : "Show more ↓"}
+          </button>
+        )}
       </div>
 
-      {/* Actions */}
+      {/* Actions - always at bottom */}
       <div style={{
         display: "flex",
         gap: "8px",
         padding: "14px 20px",
         borderTop: "1px solid var(--border)",
         background: "var(--hover-bg)",
+        flexShrink: 0,
       }}>
         <a
           href={job.job_url}
