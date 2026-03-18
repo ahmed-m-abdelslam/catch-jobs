@@ -124,9 +124,7 @@ async def create_notifications_for_new_jobs(new_job_ids):
 
         for pref in prefs:
             try:
-                pref_embedding = await generate_embedding_for_preference(
-                    pref["job_title"], pref["country"]
-                ) if asyncio.iscoroutinefunction(generate_embedding_for_preference) else generate_embedding_for_preference(
+                pref_embedding = generate_embedding_for_preference(
                     pref["job_title"], pref["country"]
                 )
                 emb_str = "[" + ",".join(str(x) for x in pref_embedding) + "]"

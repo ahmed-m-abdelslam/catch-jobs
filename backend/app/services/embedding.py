@@ -1,55 +1,52 @@
-from openai import OpenAI
 from app.config import get_settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 _client = None
 
 def _get_client():
     global _client
     if _client is None:
+        from openai import OpenAI
         settings = get_settings()
         _client = OpenAI(api_key=settings.openai_api_key)
-        print("OpenAI client initialized!")
+        logger.info("OpenAI client initialized")
     return _client
 
 
 def generate_embedding(text: str) -> list[float]:
-    """Generate a 1536-dimensional embedding using OpenAI."""
+    """Generate embedding using OpenAI text-embedding-3-small."""
     try:
         client = _get_client()
         response = client.embeddings.create(
             model="text-embedding-3-small",
-            input=text[:8000],
+            input=text[:8000]
         )
         return response.data[0].embedding
     except Exception as e:
-        print(f"OpenAI embedding error: {e}")
-        return [0.0] * 1536
+        logger.warning(f"OpenAI embedding error: {e}")
+        return None
 
 
 def generate_embedding_for_job(title: str, company: str, description: str) -> list[float]:
-    parts = []
-    if title:
-        parts.append(f"Job Title: {title}")
-    if company:
-        parts.append(f"Company: {company}")
+    """Generate embedding for a job posting."""
+    text = f"Job Title: {title}. Company: {company}."
     if description:
-        parts.append(f"Description: {description[:500]}")
-    text = " | ".join(parts) if parts else "Unknown Job"
+        text += f" Description: {description[:500]}"
     return generate_embedding(text)
 
 
 def generate_embedding_for_preference(job_title: str, country: str = None, experience: str = None) -> list[float]:
-    parts = []
-    if job_title:
-        parts.append(f"Job Title: {job_title}")
+    """Generate embedding for a user preference."""
+    text = f"Job Title: {job_title}."
     if country:
-        parts.append(f"Country: {country}")
+        text += f" Location: {country}."
     if experience:
-        parts.append(f"Experience: {experience}")
-    text = " | ".join(parts) if parts else "Unknown Preference"
+        text += f" Experience: {experience}."
     return generate_embedding(text)
 
 
 def get_model():
-    """Compatibility function - returns None for OpenAI mode."""
+    """Compatibility stub."""
     return None

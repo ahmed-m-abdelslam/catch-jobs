@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -41,25 +40,7 @@ async def lifespan(app: FastAPI):
             print(f"Embedding migration check: {e}")
     print("Database tables ready!")
 
-    # Start background scraper
-    async def auto_scrape():
-        """Run scraping every 10 minutes in background."""
-        await asyncio.sleep(30)  # Wait 30s after startup
-        while True:
-            try:
-                print("\n[Auto-Scrape] Starting scheduled scrape...")
-                from app.tasks.scrape_tasks import _run_scrape
-                result = await _run_scrape()
-                print(f"[Auto-Scrape] Done: {result.get('total_new', 0)} new jobs, {result.get('total_embedded', 0)} embeddings")
-            except Exception as e:
-                print(f"[Auto-Scrape] Error: {e}")
-            await asyncio.sleep(600)  # 10 minutes
-
-    scrape_task = asyncio.create_task(auto_scrape())
-    print("Auto-scraper started (every 10 minutes)")
-
     yield
-    scrape_task.cancel()
     await engine.dispose()
 
 
