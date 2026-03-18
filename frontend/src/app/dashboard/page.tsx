@@ -28,6 +28,8 @@ export default function DashboardPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
   const [notifCount, setNotifCount] = useState(0);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [quickSearch, setQuickSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -38,7 +40,7 @@ export default function DashboardPage() {
     api.getJobStats().then(setStats).catch(() => {});
     api.getSavedJobs().then((jobs: any[]) => { setSavedJobs(jobs); setSavedIds(new Set(jobs.map((j: any) => j.id))); }).catch(() => {});
     api.getPreferences().then(setPreferences).catch(() => {});
-    api.getNotificationCount().then((r: any) => setNotifCount(r.count || 0)).catch(() => {});
+    api.getNotificationCount().then((r: any) => setNotifCount(r.unread_count || 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -51,6 +53,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (showSearch && searchRef.current) searchRef.current.focus();
   }, [showSearch]);
+
+  function loadNotifications() {
+    api.getNotifications().then((notifs: any[]) => {
+      setNotifications(notifs);
+    }).catch(() => {});
+  }
 
   function loadRecommended() {
     setLoading(true);
@@ -230,48 +238,140 @@ export default function DashboardPage() {
             )}
 
             {/* Notification Bell */}
-            <button
-              style={{
-                width: "40px",
-                height: "40px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "12px",
-                border: "1px solid var(--border)",
-                background: "var(--card)",
-                color: "var(--text-light)",
-                cursor: "pointer",
-                position: "relative",
-                transition: "all 0.2s ease",
-                fontSize: "18px",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; e.currentTarget.style.transform = "scale(1.05)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--card)"; e.currentTarget.style.transform = "scale(1)"; }}
-              title="Notifications">
-              🔔
-              {notifCount > 0 && (
-                <span style={{
-                  position: "absolute",
-                  top: "-4px",
-                  right: "-4px",
-                  width: "20px",
-                  height: "20px",
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => { setShowNotifPanel(!showNotifPanel); if (!showNotifPanel) loadNotifications(); }}
+                style={{
+                  width: "40px",
+                  height: "40px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  borderRadius: "50%",
-                  background: "#ef4444",
-                  color: "white",
-                  border: "2px solid var(--bg)",
-                  animation: "pulse-soft 2s ease infinite",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border)",
+                  background: showNotifPanel ? "var(--primary)" : "var(--card)",
+                  color: showNotifPanel ? "white" : "var(--text-light)",
+                  cursor: "pointer",
+                  position: "relative",
+                  transition: "all 0.2s ease",
+                  fontSize: "18px",
+                }}
+                onMouseEnter={(e) => { if (!showNotifPanel) { e.currentTarget.style.background = "var(--hover-bg)"; e.currentTarget.style.transform = "scale(1.05)"; } }}
+                onMouseLeave={(e) => { if (!showNotifPanel) { e.currentTarget.style.background = "var(--card)"; e.currentTarget.style.transform = "scale(1)"; } }}
+                title="Notifications">
+                🔔
+                {notifCount > 0 && (
+                  <span style={{
+                    position: "absolute",
+                    top: "-4px",
+                    right: "-4px",
+                    width: "20px",
+                    height: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    borderRadius: "50%",
+                    background: "#ef4444",
+                    color: "white",
+                    border: "2px solid var(--bg)",
+                    animation: "pulse-soft 2s ease infinite",
+                  }}>
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifPanel && (
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  width: "380px",
+                  maxHeight: "480px",
+                  overflowY: "auto",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "16px",
+                  boxShadow: "0 16px 48px rgba(0,0,0,0.15)",
+                  zIndex: 200,
                 }}>
-                  {notifCount > 9 ? "9+" : notifCount}
-                </span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--text)" }}>Notifications</h3>
+                    {notifCount > 0 && (
+                      <button onClick={() => {
+                        fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://catch-jobs-production.up.railway.app/api"}/notifications/read-all`, {
+                          method: "PUT",
+                          headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+                        }).then(() => { setNotifCount(0); loadNotifications(); });
+                      }} style={{ fontSize: "12px", fontWeight: 600, color: "var(--primary)", background: "none", border: "none", cursor: "pointer" }}>
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: "40px 20px", textAlign: "center" }}>
+                      <span style={{ fontSize: "32px", display: "block", marginBottom: "12px" }}>🔔</span>
+                      <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>No notifications yet</p>
+                      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>New job matches will appear here</p>
+                    </div>
+                  ) : (
+                    notifications.map((n: any) => (
+                      <a key={n.id} href={`/jobs/${n.job?.id}`}
+                        onClick={() => {
+                          if (!n.is_read) {
+                            fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://catch-jobs-production.up.railway.app/api"}/notifications/${n.id}/read`, {
+                              method: "PUT",
+                              headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+                            });
+                          }
+                          setShowNotifPanel(false);
+                        }}
+                        style={{
+                          display: "flex",
+                          gap: "12px",
+                          padding: "14px 20px",
+                          borderBottom: "1px solid var(--border)",
+                          textDecoration: "none",
+                          background: n.is_read ? "transparent" : "var(--primary-bg, #3b82f608)",
+                          transition: "background 0.2s",
+                          cursor: "pointer",
+                        }}>
+                        <div style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: n.is_read ? "var(--hover-bg)" : "#3b82f615",
+                          fontSize: "18px",
+                          flexShrink: 0,
+                        }}>
+                          💼
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "13px", fontWeight: n.is_read ? 500 : 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {n.job?.title || "New job match"}
+                          </p>
+                          <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                            {n.job?.company_name || ""} {n.job?.country ? `· ${n.job.country}` : ""}
+                          </p>
+                          <p style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>
+                            {new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                        {!n.is_read && (
+                          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3b82f6", flexShrink: 0, marginTop: "6px" }} />
+                        )}
+                      </a>
+                    ))
+                  )}
+                </div>
               )}
-            </button>
+            </div>
 
             {/* User Avatar & Dropdown */}
             {user && (

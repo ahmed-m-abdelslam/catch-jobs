@@ -84,7 +84,6 @@ async def generate_embeddings_for_new_jobs(new_job_ids):
                     description=(job["description"] or "")[:500],
                 )
 
-                # Skip if all zeros (error)
                 if all(x == 0.0 for x in embedding[:10]):
                     continue
 
@@ -105,6 +104,61 @@ async def generate_embeddings_for_new_jobs(new_job_ids):
     return embedded
 
 
+async def create_notifications_for_new_jobs(new_job_ids):
+    """Match new jobs with user preferences and create notifications."""
+    import asyncpg
+    from app.services.embedding import generate_embedding_for_preference
+
+    if not new_job_ids:
+        return 0
+
+    url = get_db_url()
+    conn = await asyncpg.connect(url, ssl=get_ssl_context())
+
+    notif_count = 0
+    try:
+        # Get all user preferences
+        prefs = await conn.fetch("SELECT id, user_id, job_title, country FROM user_preferences")
+        if not prefs:
+            return 0
+
+        for pref in prefs:
+            try:
+                pref_embedding = generate_embedding_for_preference(
+                    pref["job_title"], pref["country"]
+                )
+                emb_str = "[" + ",".join(str(x) for x in pref_embedding) + "]"
+
+                # Find matching new jobs
+                for job in new_job_ids:
+                    try:
+                        result = await conn.fetchrow("""
+                            SELECT 1 - (je.embedding <=> $1::vector) AS score
+                            FROM job_embeddings je
+                            WHERE je.job_id = $2
+                        """, emb_str, job["id"])
+
+                        if result and result["score"] >= 0.65:
+                            # Create notification
+                            await conn.execute("""
+                                INSERT INTO user_notifications (id, user_id, job_id, is_read, created_at)
+                                VALUES (gen_random_uuid(), $1, $2, false, NOW())
+                                ON CONFLICT DO NOTHING
+                            """, pref["user_id"], job["id"])
+                            notif_count += 1
+                    except Exception as e:
+                        pass
+
+            except Exception as e:
+                logger.warning(f"Notification matching error: {e}")
+
+        logger.warning(f"[Notifications] Created {notif_count} notifications")
+    finally:
+        await conn.close()
+
+    return notif_count
+
+
 async def scrape_source(scraper, terms, max_pages=2):
     """Scrape a single source, save, and generate embeddings."""
     all_jobs = []
@@ -123,7 +177,10 @@ async def scrape_source(scraper, terms, max_pages=2):
     # Generate embeddings for new jobs
     embedded = await generate_embeddings_for_new_jobs(new_job_ids)
 
-    return {"source": source_name, "scraped": len(all_jobs), "new": new_count, "embedded": embedded}
+    # Create notifications for matching users
+    notifs = await create_notifications_for_new_jobs(new_job_ids)
+
+    return {"source": source_name, "scraped": len(all_jobs), "new": new_count, "embedded": embedded, "notifications": notifs}
 
 
 async def _run_scrape(sources=None):

@@ -143,7 +143,7 @@ class ApiClient {
   }
 
   async getNotificationCount() {
-    const res = await fetch(`${API_URL}/notifications/unread-count`, { headers: this.getHeaders() });
+    const res = await fetch(`${API_URL}/notifications/count`, { headers: this.getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch count");
     return res.json();
   }
