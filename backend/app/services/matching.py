@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta
 import re
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
@@ -150,4 +151,30 @@ async def get_recommended_jobs_for_user(
         if jid not in seen or job["similarity_score"] > seen[jid]["similarity_score"]:
             seen[jid] = job
 
-    return sorted(seen.values(), key=lambda x: x["similarity_score"], reverse=True)[:limit]
+    # Combined score: similarity + freshness bonus
+    now = datetime.utcnow()
+    for job in seen.values():
+        created = job.get("created_at")
+        if created:
+            if isinstance(created, str):
+                try:
+                    created = datetime.fromisoformat(created.replace("Z", "+00:00")).replace(tzinfo=None)
+                except:
+                    created = now
+            elif hasattr(created, 'replace'):
+                created = created.replace(tzinfo=None)
+            days_old = (now - created).total_seconds() / 86400
+        else:
+            days_old = 30
+
+        # Freshness bonus: new jobs (< 1 day) get +0.10, decays over 14 days
+        if days_old < 1:
+            freshness = 0.10
+        elif days_old < 14:
+            freshness = 0.10 * (1 - days_old / 14)
+        else:
+            freshness = 0.0
+
+        job["combined_score"] = job["similarity_score"] + freshness
+
+    return sorted(seen.values(), key=lambda x: x["combined_score"], reverse=True)[:limit]
