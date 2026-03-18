@@ -136,10 +136,12 @@ export default function DashboardPage() {
   );
 
   const EmptyState = ({ icon, title, subtitle, action }: { icon: string; title: string; subtitle: string; action?: React.ReactNode }) => (
-    <div className="flex flex-col items-center justify-center py-24 rounded-2xl" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-      <span className="text-5xl mb-4">{icon}</span>
-      <p className="text-lg font-semibold mb-1" style={{ color: "var(--text)" }}>{title}</p>
-      <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", borderRadius: "20px", background: "var(--card)", border: "1px solid var(--border)" }}>
+      <div style={{ width: "80px", height: "80px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #3b82f615, #8b5cf615)", marginBottom: "20px", fontSize: "36px" }}>
+        {icon}
+      </div>
+      <p style={{ fontSize: "20px", fontWeight: 800, color: "var(--text)", marginBottom: "8px" }}>{title}</p>
+      <p style={{ fontSize: "14px", color: "var(--text-muted)", marginBottom: "24px", textAlign: "center", maxWidth: "320px", lineHeight: "1.6" }}>{subtitle}</p>
       {action}
     </div>
   );
@@ -490,12 +492,20 @@ export default function DashboardPage() {
         {activeTab === "saved" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border)" }}>
-              <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)" }}>❤️ Saved Jobs</h2>
-              {savedJobs.length > 0 && <span style={{ fontSize: "13px", fontWeight: 600, padding: "4px 12px", borderRadius: "100px", background: "#ef444415", color: "#ef4444" }}>{savedJobs.length} saved</span>}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: "#ef444415", fontSize: "20px" }}>
+                  ❤️
+                </div>
+                <div>
+                  <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)" }}>Saved Jobs</h2>
+                  <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>Jobs you want to come back to</p>
+                </div>
+              </div>
+              {savedJobs.length > 0 && <span style={{ fontSize: "13px", fontWeight: 700, padding: "6px 16px", borderRadius: "100px", background: "#ef444415", color: "#ef4444" }}>{savedJobs.length} saved</span>}
             </div>
             {loading ? <Spinner /> : savedJobs.length === 0 ? (
-              <EmptyState icon="💾" title="No saved jobs" subtitle="Save jobs you're interested in to find them here"
-                action={<button onClick={() => setActiveTab("all")} className="btn btn-primary text-xs py-2">Browse All Jobs</button>} />
+              <EmptyState icon="❤️" title="No saved jobs yet" subtitle="Tap the heart icon on any job to save it here for later. Your saved jobs will appear in this section."
+                action={<button onClick={() => setActiveTab("all")} style={{ padding: "10px 24px", borderRadius: "10px", background: "var(--primary)", color: "white", border: "none", fontWeight: 700, fontSize: "13px", cursor: "pointer" }}>Browse All Jobs</button>} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 card-grid">
                 {savedJobs.map((job: any) => (
