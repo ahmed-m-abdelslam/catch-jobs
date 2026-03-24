@@ -85,11 +85,15 @@ async def generate_embeddings_for_new_jobs(new_job_ids):
                 if all(x == 0.0 for x in embedding[:10]):
                     continue
 
-                await conn.execute("""
-                    INSERT INTO job_embeddings (id, job_id, embedding)
-                    VALUES (gen_random_uuid(), $1, $2)
-                    ON CONFLICT (job_id) DO NOTHING
-                """, job["id"], str(embedding))
+                # Check if embedding already exists
+                existing = await conn.fetchrow(
+                    "SELECT id FROM job_embeddings WHERE job_id = $1", job["id"]
+                )
+                if not existing:
+                    await conn.execute("""
+                        INSERT INTO job_embeddings (id, job_id, embedding)
+                        VALUES (gen_random_uuid(), $1, $2)
+                    """, job["id"], str(embedding))
                 embedded += 1
 
             except Exception as e:
