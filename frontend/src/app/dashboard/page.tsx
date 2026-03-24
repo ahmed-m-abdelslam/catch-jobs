@@ -206,7 +206,7 @@ export default function DashboardPage() {
       )}
 
       <header className="glass-header sticky top-0 z-50 w-full" style={{ borderBottom: "1px solid var(--border)" }}>
-        <div className="w-full px-5 sm:px-8 py-3.5 flex justify-between items-center">
+        <div className="w-full px-5 sm:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Catch Jobs" width={40} height={40} style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(99,102,241,0.2)" }} />
             <div>
@@ -488,7 +488,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="w-full px-5 sm:px-8 pt-4 pb-2">
+      <div className="w-full px-5 sm:px-8 pt-5 pb-4">
         <div style={{ display: "flex", width: "100%", gap: "4px", padding: "5px", borderRadius: "16px", background: "var(--card)", border: "1px solid var(--border)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
