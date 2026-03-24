@@ -1,9 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { api } from "@/lib/api";
 import Image from "next/image";
 import ThemeToggle from "@/components/ThemeToggle";
+
+const InputField = memo(({ icon, label, type, value, onChange, placeholder, required, minLength, maxLength, style: extraStyle }: any) => (
+  <div style={{ marginBottom: "16px" }}>
+    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "6px" }}>{label}</label>
+    <div style={{ position: "relative" }}>
+      <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", opacity: 0.5 }}>{icon}</span>
+      <input
+        type={type} value={value} onChange={onChange} placeholder={placeholder}
+        required={required} minLength={minLength} maxLength={maxLength}
+        style={{
+          width: "100%",
+          padding: "12px 14px 12px 42px",
+          borderRadius: "12px",
+          border: "1px solid var(--border)",
+          background: "var(--bg)",
+          color: "var(--text)",
+          fontSize: "14px",
+          outline: "none",
+          transition: "all 0.2s ease",
+          boxSizing: "border-box" as const,
+          ...extraStyle,
+        }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.1)"; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
+      />
+    </div>
+  </div>
+));
+InputField.displayName = "InputField";
 
 type View = "login" | "register" | "verify" | "forgot" | "reset";
 
@@ -95,33 +124,7 @@ export default function LoginPage() {
     </div>
   );
 
-  const InputField = ({ icon, label, type, value, onChange, placeholder, required, minLength, maxLength, style: extraStyle }: any) => (
-    <div style={{ marginBottom: "16px" }}>
-      <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "6px" }}>{label}</label>
-      <div style={{ position: "relative" }}>
-        <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", opacity: 0.5 }}>{icon}</span>
-        <input
-          type={type} value={value} onChange={onChange} placeholder={placeholder}
-          required={required} minLength={minLength} maxLength={maxLength}
-          style={{
-            width: "100%",
-            padding: "12px 14px 12px 42px",
-            borderRadius: "12px",
-            border: "1px solid var(--border)",
-            background: "var(--bg)",
-            color: "var(--text)",
-            fontSize: "14px",
-            outline: "none",
-            transition: "all 0.2s ease",
-            boxSizing: "border-box",
-            ...extraStyle,
-          }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.1)"; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
-        />
-      </div>
-    </div>
-  );
+
 
   const SubmitBtn = ({ loading: l, text }: { loading: boolean; text: string }) => (
     <button type="submit" disabled={l}
