@@ -208,12 +208,14 @@ export default function DashboardPage() {
       <header className="glass-header sticky top-0 z-50 w-full" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="w-full px-5 sm:px-8 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Catch Jobs" width={36} height={36} className="rounded-lg" />
+            <Image src="/logo.png" alt="Catch Jobs" width={40} height={40} style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(99,102,241,0.2)" }} />
             <div>
-              <h1 className="text-lg font-extrabold gradient-text leading-tight">Catch Jobs</h1>
+              <h1 style={{ fontSize: "20px", fontWeight: 900, background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", lineHeight: 1.2, letterSpacing: "-0.3px" }}>Catch Jobs</h1>
               {stats && (
-                <p className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
-                  {stats.total_jobs.toLocaleString()} jobs · {Object.keys(stats.by_source || {}).length} sources
+                <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginTop: "1px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}><span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10b981", display: "inline-block", animation: "pulse-soft 2s ease infinite" }} />{stats.total_jobs.toLocaleString()} jobs</span>
+                  <span style={{ color: "var(--border)" }}>·</span>
+                  <span>{Object.keys(stats.by_source || {}).length} sources</span>
                 </p>
               )}
             </div>
@@ -460,22 +462,24 @@ export default function DashboardPage() {
         <div className="w-full px-5 sm:px-8 pt-5">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: "💼", value: stats.total_jobs.toLocaleString(), label: "Total Jobs", color: "var(--primary)", bg: "#3b82f615" },
-              { icon: "🔗", value: Object.keys(stats.by_source || {}).length, label: "Sources", color: "var(--success)", bg: "#10b98115" },
-              { icon: "🌍", value: Object.keys(stats.by_country || {}).length, label: "Countries", color: "#8b5cf6", bg: "#8b5cf615" },
-              { icon: "♥", value: savedIds.size, label: "Saved Jobs", color: savedIds.size > 0 ? "#ef4444" : "#9ca3af", bg: savedIds.size > 0 ? "#ef444415" : "#9ca3af15" },
+              { icon: "💼", value: stats.total_jobs.toLocaleString(), label: "Total Jobs", sublabel: "Across all sources", color: "#3b82f6", gradient: "linear-gradient(135deg, #3b82f6, #6366f1)", bg: "linear-gradient(135deg, #3b82f608, #6366f115)" },
+              { icon: "🔗", value: Object.keys(stats.by_source || {}).length, label: "Sources", sublabel: "Active platforms", color: "#10b981", gradient: "linear-gradient(135deg, #10b981, #059669)", bg: "linear-gradient(135deg, #10b98108, #05966915)" },
+              { icon: "🌍", value: Object.keys(stats.by_country || {}).length, label: "Countries", sublabel: "Global coverage", color: "#8b5cf6", gradient: "linear-gradient(135deg, #8b5cf6, #7c3aed)", bg: "linear-gradient(135deg, #8b5cf608, #7c3aed15)" },
+              { icon: "♥", value: savedIds.size, label: "Saved Jobs", sublabel: savedIds.size > 0 ? "Your collection" : "None saved yet", color: savedIds.size > 0 ? "#ef4444" : "#9ca3af", gradient: savedIds.size > 0 ? "linear-gradient(135deg, #ef4444, #dc2626)" : "linear-gradient(135deg, #9ca3af, #6b7280)", bg: savedIds.size > 0 ? "linear-gradient(135deg, #ef444408, #dc262615)" : "linear-gradient(135deg, #9ca3af08, #6b728015)" },
             ].map((s, i) => (
-              <div key={i} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "16px", padding: "16px", transition: "all 0.3s ease", cursor: "default" }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+              <div key={i} style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "20px", padding: "20px", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: "default", position: "relative", overflow: "hidden" }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.12)"; e.currentTarget.style.borderColor = s.color; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "42px", height: "42px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: s.bg, fontSize: "20px", flexShrink: 0 }}>
+                <div style={{ position: "absolute", top: 0, right: 0, width: "80px", height: "80px", background: s.bg, borderRadius: "0 20px 0 80px", opacity: 0.5 }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "14px", position: "relative" }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", background: s.gradient, fontSize: "22px", flexShrink: 0, boxShadow: `0 4px 12px ${s.color}30` }}>
                     {s.icon}
                   </div>
                   <div>
-                    <p style={{ fontSize: "22px", fontWeight: 800, color: s.color, lineHeight: 1.2 }}>{s.value}</p>
-                    <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginTop: "2px" }}>{s.label}</p>
+                    <p style={{ fontSize: "26px", fontWeight: 800, color: s.color, lineHeight: 1.1, letterSpacing: "-0.5px" }}>{s.value}</p>
+                    <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text)", marginTop: "2px" }}>{s.label}</p>
+                    <p style={{ fontSize: "10px", fontWeight: 500, color: "var(--text-muted)", marginTop: "1px" }}>{s.sublabel}</p>
                   </div>
                 </div>
               </div>
