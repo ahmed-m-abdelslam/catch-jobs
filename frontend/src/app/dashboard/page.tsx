@@ -460,7 +460,7 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       {stats && activeTab === "recommended" && (
         <div className="w-full px-5 sm:px-8 pt-5">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
             {[
               { icon: "💼", value: stats.total_jobs.toLocaleString(), label: "Total Jobs", sublabel: "Across all sources", color: "#3b82f6", gradient: "linear-gradient(135deg, #3b82f6, #6366f1)", bg: "linear-gradient(135deg, #3b82f608, #6366f115)" },
               { icon: "🔗", value: Object.keys(stats.by_source || {}).length, label: "Sources", sublabel: "Active platforms", color: "#10b981", gradient: "linear-gradient(135deg, #10b981, #059669)", bg: "linear-gradient(135deg, #10b98108, #05966915)" },
