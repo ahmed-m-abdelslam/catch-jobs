@@ -493,13 +493,15 @@ export default function DashboardPage() {
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{
+                flex: 1,
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "8px",
-                padding: "10px 20px",
+                padding: "12px 20px",
                 fontSize: "13px",
                 fontWeight: 700,
-                borderRadius: "10px",
+                borderRadius: "12px",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.25s ease",
