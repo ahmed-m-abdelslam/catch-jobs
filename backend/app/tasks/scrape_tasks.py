@@ -2,8 +2,6 @@ import asyncio
 import os
 import ssl
 import logging
-from celery import shared_task
-from app.tasks.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +260,6 @@ async def _run_scrape(sources=None):
     return {"results": results, "total_new": total_new, "total_embedded": total_embedded}
 
 
-@celery_app.task(name="app.tasks.scrape_tasks.scrape_all_jobs")
 def scrape_all_jobs():
     logger.warning("[Celery] Starting scheduled scrape...")
     result = asyncio.run(_run_scrape())
@@ -270,7 +267,6 @@ def scrape_all_jobs():
     return result
 
 
-@celery_app.task(name="app.tasks.scrape_tasks.scrape_single_source")
 def scrape_single_source(source_name):
     logger.warning(f"[Celery] Scraping {source_name}...")
     result = asyncio.run(_run_scrape(sources=[source_name]))
