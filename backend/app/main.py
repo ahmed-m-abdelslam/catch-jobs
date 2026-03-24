@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -40,7 +41,28 @@ async def lifespan(app: FastAPI):
             print(f"Embedding migration check: {e}")
     print("Database tables ready!")
 
+    # Background scraper (replaces Celery)
+    async def background_scraper():
+        await asyncio.sleep(60)  # Wait 1 min after startup
+        while True:
+            try:
+                print("\n[Scraper] Starting scheduled scrape...")
+                from app.tasks.scrape_tasks import _run_scrape
+                result = await _run_scrape()
+                new = result.get("total_new", 0)
+                emb = result.get("total_embedded", 0)
+                notifs = result.get("total_notifications", 0)
+                print(f"[Scraper] Done: {new} new jobs, {emb} embeddings, {notifs} notifications")
+            except Exception as e:
+                print(f"[Scraper] Error: {e}")
+            await asyncio.sleep(600)  # Every 10 minutes
+
+    scraper_task = asyncio.create_task(background_scraper())
+    print("Background scraper started (every 10 minutes)")
+
     yield
+
+    scraper_task.cancel()
     await engine.dispose()
 
 
@@ -63,6 +85,8 @@ try:
     app.include_router(admin_router, prefix="/api")
     from app.api.backfill import router as backfill_router
     app.include_router(backfill_router, prefix="/api")
+    from app.api.scrape import router as scrape_router
+    app.include_router(scrape_router, prefix="/api")
 except ImportError:
     pass
 
