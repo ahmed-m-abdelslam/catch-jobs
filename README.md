@@ -231,7 +231,7 @@ npm run dev
 
 ## 👤 Author
 
-**Ahmed Hassan**
+**Ahmed Mahmoud**
 
 ---
 
