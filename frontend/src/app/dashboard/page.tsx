@@ -488,8 +488,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="w-full px-5 sm:px-8 pt-5 pb-2">
-        <div style={{ display: "inline-flex", gap: "4px", padding: "4px", borderRadius: "14px", background: "var(--card)", border: "1px solid var(--border)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+      <div className="w-full px-5 sm:px-8 pt-4 pb-2">
+        <div style={{ display: "flex", width: "100%", gap: "4px", padding: "5px", borderRadius: "16px", background: "var(--card)", border: "1px solid var(--border)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{
