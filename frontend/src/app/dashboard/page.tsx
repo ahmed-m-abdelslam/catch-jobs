@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [quickSearch, setQuickSearch] = useState("");
+  const [searching, setSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const pageSize = 20;
@@ -564,15 +565,22 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {activeTab === "all" && (
+        {activeTab === "all" && searching && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: "16px" }}>
+                <div style={{ width: "48px", height: "48px", border: "4px solid var(--border)", borderTop: "4px solid var(--primary)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <p style={{ color: "var(--text-muted)", fontSize: "15px", fontWeight: 600 }}>Searching with AI...</p>
+                <p style={{ color: "var(--text-muted)", fontSize: "12px" }}>Finding the most relevant jobs for you</p>
+              </div>
+            )}
+            {activeTab === "all" && !searching && (
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 style={{ fontSize: "22px", fontWeight: 800, color: "var(--text)", marginBottom: "4px" }}>
-                  {quickSearch ? `🔍 Results for "${quickSearch}"` : "📋 All Jobs"}
+                  {searching ? "🔍 Searching with AI..." : quickSearch ? `🔍 Results for "${quickSearch}"` : "📋 All Jobs"}
                 </h2>
                 <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                  {quickSearch ? `${totalJobs} jobs found` : "All available jobs · Newest first"}
+                  {searching ? "Analyzing your query with AI..." : quickSearch ? `${totalJobs} jobs found` : "All available jobs · Newest first"}
                 </p>
               </div>
               <div className="flex gap-2">
