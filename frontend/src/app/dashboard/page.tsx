@@ -44,7 +44,10 @@ export default function DashboardPage() {
     api.getMe().then(setUser).catch(() => { window.location.href = "/login"; });
     api.getJobStats().then(setStats).catch(() => {});
     api.getSavedJobs().then((jobs: any[]) => { setSavedJobs(jobs); setSavedIds(new Set(jobs.map((j: any) => j.id))); }).catch(() => {});
-    api.getPreferences().then(setPreferences).catch(() => {});
+    api.getPreferences().then((prefs: any[]) => {
+      setPreferences(prefs);
+      if (prefs.length === 0) setShowOnboarding(true);
+    }).catch(() => {});
     api.getNotificationCount().then((r: any) => setNotifCount(r.unread_count || 0)).catch(() => {});
   }, []);
 
@@ -53,12 +56,7 @@ export default function DashboardPage() {
     if (activeTab === "all") { setCurrentPage(1); loadAllJobs(1); }
     if (activeTab === "saved") loadSaved();
     if (activeTab === "preferences") api.getPreferences().then(setPreferences);
-    // Check if new user (no preferences) - show onboarding
-    if (!showOnboarding) {
-      api.getPreferences().then((prefs: any[]) => {
-        if (prefs.length === 0) setShowOnboarding(true);
-      }).catch(() => {});
-    }
+
   }, [activeTab]);
 
   useEffect(() => {
