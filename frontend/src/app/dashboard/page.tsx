@@ -91,13 +91,18 @@ export default function DashboardPage() {
     if (!quickSearch.trim()) return;
     setActiveTab("all");
     setCurrentPage(1);
+    setSearching(true);
+    setAllJobs([]);
     try {
-      const results = await api.aiSearch(quickSearch.trim(), 30);
-      setAllJobs(results);
-      setTotalJobs(results.length);
+      const results = await api.aiSearch(quickSearch.trim(), 50);
+      const sorted = results.sort((a: any, b: any) => (b.created_at || "").localeCompare(a.created_at || ""));
+      setAllJobs(sorted);
+      setTotalJobs(sorted.length);
       setTotalPages(1);
     } catch {
       loadAllJobs(1, quickSearch.trim());
+    } finally {
+      setSearching(false);
     }
     setShowSearch(false);
   }
