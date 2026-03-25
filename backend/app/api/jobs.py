@@ -230,9 +230,8 @@ async def ai_search_jobs(
     db_url = os.getenv("DATABASE_URL", "")
     db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
     
-    ssl_ctx = _ssl.create_default_context()
     try:
-        conn = await asyncpg.connect(db_url, ssl=ssl_ctx)
+        conn = await asyncpg.connect(db_url, ssl='require')
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB connect error: {str(e)}")
 
