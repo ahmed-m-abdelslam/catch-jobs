@@ -226,12 +226,15 @@ async def ai_search_jobs(
     embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
     # Use raw asyncpg for pgvector query
-    import os
+    import os, traceback as _tb
     db_url = os.getenv("DATABASE_URL", "")
     db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
     
     ssl_ctx = _ssl.create_default_context()
-    conn = await asyncpg.connect(db_url, ssl=ssl_ctx)
+    try:
+        conn = await asyncpg.connect(db_url, ssl=ssl_ctx)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DB connect error: {str(e)}")
 
     try:
         if country:
@@ -257,8 +260,14 @@ async def ai_search_jobs(
                 ORDER BY similarity DESC
                 LIMIT $2
             """, embedding_str, limit)
-    finally:
+    except Exception as e:
         await conn.close()
+        raise HTTPException(status_code=500, detail=f"Query error: {str(e)}")
+    finally:
+        try:
+            await conn.close()
+        except:
+            pass
 
     # Deduplicate by title+company
     seen = {}
