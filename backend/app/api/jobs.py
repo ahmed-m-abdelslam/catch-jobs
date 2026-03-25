@@ -206,12 +206,13 @@ async def ai_search_jobs(
     db: AsyncSession = Depends(get_db),
 ):
     """AI-powered semantic job search using embeddings."""
-    from sqlalchemy import text
+    import asyncpg
+    import ssl as _ssl
 
     # Generate embedding for the search query
     query_embedding = generate_embedding(f"Job: {q}")
     if not query_embedding:
-        # Fallback to text search if embedding fails
+        # Fallback to text search
         query = select(Job).where(
             Job.title.ilike(f"%{q}%") | Job.company_name.ilike(f"%{q}%")
         )
@@ -224,54 +225,67 @@ async def ai_search_jobs(
 
     embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
-    # Use pgvector cosine similarity search
-    if country:
-        sql = text("""
-            SELECT j.*, 1 - (je.embedding <=> :emb::vector) AS similarity
-            FROM jobs j
-            JOIN job_embeddings je ON je.job_id = j.id
-            WHERE j.country ILIKE :country
-            AND 1 - (je.embedding <=> :emb::vector) >= 0.55
-            ORDER BY similarity DESC
-            LIMIT :lim
-        """)
-        result = await db.execute(sql, {"emb": embedding_str, "country": f"%{country}%", "lim": limit})
-    else:
-        sql = text("""
-            SELECT j.*, 1 - (je.embedding <=> :emb::vector) AS similarity
-            FROM jobs j
-            JOIN job_embeddings je ON je.job_id = j.id
-            WHERE 1 - (je.embedding <=> :emb::vector) >= 0.55
-            ORDER BY similarity DESC
-            LIMIT :lim
-        """)
-        result = await db.execute(sql, {"emb": embedding_str, "lim": limit})
+    # Use raw asyncpg for pgvector query
+    import os
+    db_url = os.getenv("DATABASE_URL", "")
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    
+    ssl_ctx = _ssl.create_default_context()
+    conn = await asyncpg.connect(db_url, ssl=ssl_ctx)
 
-    rows = result.fetchall()
+    try:
+        if country:
+            rows = await conn.fetch("""
+                SELECT j.id, j.title, j.company_name, j.location, j.country,
+                       j.description, j.job_url, j.source, j.posted_date, j.created_at,
+                       1 - (je.embedding <=> $1::vector) AS similarity
+                FROM jobs j
+                JOIN job_embeddings je ON je.job_id = j.id
+                WHERE j.country ILIKE $2
+                AND 1 - (je.embedding <=> $1::vector) >= 0.55
+                ORDER BY similarity DESC
+                LIMIT $3
+            """, embedding_str, f"%{country}%", limit)
+        else:
+            rows = await conn.fetch("""
+                SELECT j.id, j.title, j.company_name, j.location, j.country,
+                       j.description, j.job_url, j.source, j.posted_date, j.created_at,
+                       1 - (je.embedding <=> $1::vector) AS similarity
+                FROM jobs j
+                JOIN job_embeddings je ON je.job_id = j.id
+                WHERE 1 - (je.embedding <=> $1::vector) >= 0.55
+                ORDER BY similarity DESC
+                LIMIT $2
+            """, embedding_str, limit)
+    finally:
+        await conn.close()
 
     # Deduplicate by title+company
     seen = {}
     jobs = []
     for row in rows:
-        key = (row.title.strip().lower() if row.title else "", (row.company_name or "").strip().lower())
+        title = row["title"] or ""
+        company = row["company_name"] or ""
+        key = (title.strip().lower(), company.strip().lower())
         if key not in seen:
             seen[key] = True
-            job_dict = {
-                "id": str(row.id),
-                "title": row.title,
-                "company_name": row.company_name,
-                "location": row.location,
-                "country": row.country,
-                "description": row.description,
-                "job_url": row.job_url,
-                "source": row.source,
-                "posted_date": str(row.posted_date) if row.posted_date else None,
-                "created_at": row.created_at.isoformat() if row.created_at else None,
-                "similarity_score": round(float(row.similarity), 4),
-            }
-            jobs.append(job_dict)
+            jobs.append({
+                "id": str(row["id"]),
+                "title": title,
+                "company_name": company,
+                "location": row["location"],
+                "country": row["country"],
+                "description": row["description"],
+                "job_url": row["job_url"],
+                "source": row["source"],
+                "posted_date": str(row["posted_date"]) if row["posted_date"] else None,
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "similarity_score": round(float(row["similarity"]), 4),
+            })
 
     return jobs
+
+
 @router.get("/{job_id}", response_model=JobResponse)
 async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Job).where(Job.id == job_id))
