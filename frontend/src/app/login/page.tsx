@@ -48,6 +48,8 @@ export default function LoginPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobCountry, setJobCountry] = useState("");
 
   function clearMessages() { setError(""); setSuccess(""); }
 
@@ -62,7 +64,12 @@ export default function LoginPage() {
   }
 
   async function handleRegister(e: React.FormEvent) {
-    e.preventDefault(); clearMessages(); setLoading(true);
+    e.preventDefault(); clearMessages();
+    if (!jobTitle.trim() || !jobCountry.trim()) {
+      setError("Please fill in your job preference to get personalized recommendations");
+      return;
+    }
+    setLoading(true);
     try {
       await api.register(email, password, fullName);
       setSuccess("Verification code sent to your email!");
@@ -76,6 +83,14 @@ export default function LoginPage() {
     try {
       const result = await api.verifyCode(email, code);
       localStorage.setItem("token", result.access_token);
+      // Save preference if provided during registration
+      if (jobTitle.trim() && jobCountry.trim()) {
+        try {
+          await api.addPreference(jobTitle.trim(), jobCountry.trim(), false);
+        } catch (prefErr) {
+          console.log("Preference save error:", prefErr);
+        }
+      }
       window.location.href = "/dashboard";
     } catch (err: any) { setError(err.message || "Invalid code"); }
     finally { setLoading(false); }
@@ -336,6 +351,34 @@ export default function LoginPage() {
               onChange={(e: any) => setEmail(e.target.value)} placeholder="you@example.com" required />
             <InputField icon="🔒" label="Password" type="password" value={password}
               onChange={(e: any) => setPassword(e.target.value)} placeholder="••••••••" required />
+
+            {view === "register" && (
+              <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px", marginBottom: "16px" }}>
+                <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--primary)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  🎯 What job are you looking for?
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px" }}>Job Title *</label>
+                    <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} required
+                      placeholder="e.g. Data Scientist"
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: "10px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: "13px", outline: "none", boxSizing: "border-box" as any }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px" }}>Country *</label>
+                    <input type="text" value={jobCountry} onChange={e => setJobCountry(e.target.value)} required
+                      placeholder="e.g. Egypt"
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: "10px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: "13px", outline: "none", boxSizing: "border-box" as any }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {view === "login" && (
               <div style={{ textAlign: "right", marginBottom: "8px" }}>
