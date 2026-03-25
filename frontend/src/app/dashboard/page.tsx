@@ -875,7 +875,7 @@ export default function DashboardPage() {
               onClick={async () => {
                 setOnboardSaving(true);
                 try {
-                  await api.addPreference(onboardTitle.trim(), onboardCountry.trim(), false);
+                  await api.addPreference({ job_title: onboardTitle.trim(), country: onboardCountry.trim(), remote_allowed: false });
                   setShowOnboarding(false);
                   setActiveTab("recommended");
                   api.getPreferences().then(setPreferences);

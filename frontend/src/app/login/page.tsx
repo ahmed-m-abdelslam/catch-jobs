@@ -86,7 +86,7 @@ export default function LoginPage() {
       // Save preference if provided during registration
       if (jobTitle.trim() && jobCountry.trim()) {
         try {
-          await api.addPreference(jobTitle.trim(), jobCountry.trim(), false);
+          await api.addPreference({ job_title: jobTitle.trim(), country: jobCountry.trim(), remote_allowed: false });
         } catch (prefErr) {
           console.log("Preference save error:", prefErr);
         }
