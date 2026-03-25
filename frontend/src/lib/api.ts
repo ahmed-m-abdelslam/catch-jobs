@@ -161,6 +161,13 @@ class ApiClient {
     if (!res.ok) throw new Error("Failed to fetch job");
     return res.json();
   }
+
+  async aiSearch(query: string, limit: number = 20) {
+    const res = await fetch(`${API_URL}/jobs/ai-search?q=${encodeURIComponent(query)}&limit=${limit}`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error("AI search failed");
+    return res.json();
+  }
+
 }
 
 export const api = new ApiClient();

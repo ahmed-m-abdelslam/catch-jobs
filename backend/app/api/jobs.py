@@ -7,7 +7,8 @@ from sqlalchemy import select, func
 from app.database import get_db
 from app.api.auth import get_current_user
 from app.models.user import User
-from app.models.job import Job
+from app.models.job import Job, JobEmbedding
+from app.services.embedding import generate_embedding
 from app.models.preference import UserPreference
 from app.models.notification import SavedJob
 from app.schemas.job import JobResponse
@@ -235,3 +236,79 @@ async def unsave_job(
     if saved:
         await db.delete(saved)
     return {"detail": "Removed"}
+
+
+@router.get("/ai-search")
+async def ai_search_jobs(
+    q: str = Query(..., min_length=2, description="Search query"),
+    limit: int = Query(default=20, le=50),
+    country: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    """AI-powered semantic job search using embeddings."""
+    from sqlalchemy import text
+
+    # Generate embedding for the search query
+    query_embedding = generate_embedding(f"Job: {q}")
+    if not query_embedding:
+        # Fallback to text search if embedding fails
+        query = select(Job).where(
+            Job.title.ilike(f"%{q}%") | Job.company_name.ilike(f"%{q}%")
+        )
+        if country:
+            query = query.where(Job.country.ilike(f"%{country}%"))
+        query = query.order_by(Job.created_at.desc()).limit(limit)
+        result = await db.execute(query)
+        jobs = result.scalars().all()
+        return [_job_to_dict(j) for j in jobs]
+
+    embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
+
+    # Use pgvector cosine similarity search
+    if country:
+        sql = text("""
+            SELECT j.*, 1 - (je.embedding <=> :emb::vector) AS similarity
+            FROM jobs j
+            JOIN job_embeddings je ON je.job_id = j.id
+            WHERE j.country ILIKE :country
+            AND 1 - (je.embedding <=> :emb::vector) >= 0.55
+            ORDER BY similarity DESC
+            LIMIT :lim
+        """)
+        result = await db.execute(sql, {"emb": embedding_str, "country": f"%{country}%", "lim": limit})
+    else:
+        sql = text("""
+            SELECT j.*, 1 - (je.embedding <=> :emb::vector) AS similarity
+            FROM jobs j
+            JOIN job_embeddings je ON je.job_id = j.id
+            WHERE 1 - (je.embedding <=> :emb::vector) >= 0.55
+            ORDER BY similarity DESC
+            LIMIT :lim
+        """)
+        result = await db.execute(sql, {"emb": embedding_str, "lim": limit})
+
+    rows = result.fetchall()
+
+    # Deduplicate by title+company
+    seen = {}
+    jobs = []
+    for row in rows:
+        key = (row.title.strip().lower() if row.title else "", (row.company_name or "").strip().lower())
+        if key not in seen:
+            seen[key] = True
+            job_dict = {
+                "id": str(row.id),
+                "title": row.title,
+                "company_name": row.company_name,
+                "location": row.location,
+                "country": row.country,
+                "description": row.description,
+                "job_url": row.job_url,
+                "source": row.source,
+                "posted_date": str(row.posted_date) if row.posted_date else None,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "similarity_score": round(float(row.similarity), 4),
+            }
+            jobs.append(job_dict)
+
+    return jobs
