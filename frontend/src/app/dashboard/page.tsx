@@ -45,9 +45,13 @@ export default function DashboardPage() {
     api.getJobStats().then(setStats).catch(() => {});
     api.getSavedJobs().then((jobs: any[]) => { setSavedJobs(jobs); setSavedIds(new Set(jobs.map((j: any) => j.id))); }).catch(() => {});
     api.getPreferences().then((prefs: any[]) => {
+      console.log("[ONBOARD] prefs loaded:", prefs.length);
       setPreferences(prefs);
-      if (prefs.length === 0) setShowOnboarding(true);
-    }).catch(() => {});
+      if (prefs.length === 0) {
+        console.log("[ONBOARD] No preferences - showing onboarding");
+        setShowOnboarding(true);
+      }
+    }).catch((err: any) => { console.log("[ONBOARD] Error loading prefs:", err); });
     api.getNotificationCount().then((r: any) => setNotifCount(r.unread_count || 0)).catch(() => {});
   }, []);
 
@@ -827,6 +831,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Onboarding Modal - First time users */}
+      {(() => { if (showOnboarding) console.log("[ONBOARD] Rendering modal"); return null; })()}
       {showOnboarding && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
           <div style={{ background: "var(--card)", borderRadius: "24px", padding: "40px", maxWidth: "480px", width: "90%", boxShadow: "0 24px 64px rgba(0,0,0,0.2)", border: "1px solid var(--border)", animation: "fadeIn 0.3s ease" }}>
