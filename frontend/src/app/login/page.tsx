@@ -50,6 +50,8 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
   const [jobTitle, setJobTitle] = useState("");
   const [jobCountry, setJobCountry] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobCountry, setJobCountry] = useState("");
 
   function clearMessages() { setError(""); setSuccess(""); }
 
