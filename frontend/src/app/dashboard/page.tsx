@@ -32,6 +32,10 @@ export default function DashboardPage() {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [quickSearch, setQuickSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardTitle, setOnboardTitle] = useState("");
+  const [onboardCountry, setOnboardCountry] = useState("");
+  const [onboardSaving, setOnboardSaving] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const pageSize = 20;
@@ -49,6 +53,12 @@ export default function DashboardPage() {
     if (activeTab === "all") { setCurrentPage(1); loadAllJobs(1); }
     if (activeTab === "saved") loadSaved();
     if (activeTab === "preferences") api.getPreferences().then(setPreferences);
+    // Check if new user (no preferences) - show onboarding
+    if (!showOnboarding) {
+      api.getPreferences().then((prefs: any[]) => {
+        if (prefs.length === 0) setShowOnboarding(true);
+      }).catch(() => {});
+    }
   }, [activeTab]);
 
   useEffect(() => {
@@ -817,6 +827,78 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Onboarding Modal - First time users */}
+      {showOnboarding && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+          <div style={{ background: "var(--card)", borderRadius: "24px", padding: "40px", maxWidth: "480px", width: "90%", boxShadow: "0 24px 64px rgba(0,0,0,0.2)", border: "1px solid var(--border)", animation: "fadeIn 0.3s ease" }}>
+            
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <div style={{ width: "72px", height: "72px", borderRadius: "20px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", margin: "0 auto 16px", boxShadow: "0 8px 24px rgba(99,102,241,0.3)" }}>
+                🎯
+              </div>
+              <h2 style={{ fontSize: "24px", fontWeight: 900, color: "var(--text)", marginBottom: "8px" }}>Welcome to Catch Jobs!</h2>
+              <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+                Tell us what job you are looking for so we can find the best matches for you.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                💼 What job title are you looking for?
+              </label>
+              <input type="text" value={onboardTitle} onChange={e => setOnboardTitle(e.target.value)}
+                placeholder="e.g. Software Engineer, Data Scientist, UI Designer"
+                style={{ width: "100%", padding: "14px 18px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: "15px", outline: "none", transition: "border 0.2s", boxSizing: "border-box" }}
+                onFocus={e => e.currentTarget.style.borderColor = "#6366f1"}
+                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+              />
+            </div>
+
+            <div style={{ marginBottom: "28px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                🌍 Preferred country
+              </label>
+              <input type="text" value={onboardCountry} onChange={e => setOnboardCountry(e.target.value)}
+                placeholder="e.g. Egypt, United States, Remote"
+                style={{ width: "100%", padding: "14px 18px", borderRadius: "12px", border: "2px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: "15px", outline: "none", transition: "border 0.2s", boxSizing: "border-box" }}
+                onFocus={e => e.currentTarget.style.borderColor = "#6366f1"}
+                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+              />
+            </div>
+
+            <button
+              disabled={!onboardTitle.trim() || !onboardCountry.trim() || onboardSaving}
+              onClick={async () => {
+                setOnboardSaving(true);
+                try {
+                  await api.addPreference(onboardTitle.trim(), onboardCountry.trim(), false);
+                  setShowOnboarding(false);
+                  setActiveTab("recommended");
+                  api.getPreferences().then(setPreferences);
+                  api.getRecommended().then(setRecommendedJobs);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setOnboardSaving(false);
+                }
+              }}
+              style={{
+                width: "100%", padding: "16px", borderRadius: "14px", border: "none", cursor: onboardTitle.trim() && onboardCountry.trim() ? "pointer" : "not-allowed",
+                background: onboardTitle.trim() && onboardCountry.trim() ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "var(--border)",
+                color: onboardTitle.trim() && onboardCountry.trim() ? "white" : "var(--text-muted)",
+                fontSize: "16px", fontWeight: 700, transition: "all 0.3s", boxShadow: onboardTitle.trim() && onboardCountry.trim() ? "0 8px 24px rgba(99,102,241,0.3)" : "none",
+              }}
+            >
+              {onboardSaving ? "Saving..." : "🚀 Start Catching Jobs"}
+            </button>
+
+            <p style={{ textAlign: "center", fontSize: "12px", color: "var(--text-muted)", marginTop: "16px" }}>
+              You can always add more preferences later in Settings
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
