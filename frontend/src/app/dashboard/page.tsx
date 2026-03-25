@@ -571,10 +571,22 @@ export default function DashboardPage() {
         )}
 
         {activeTab === "all" && searching && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: "16px" }}>
-                <div style={{ width: "48px", height: "48px", border: "4px solid var(--border)", borderTop: "4px solid var(--primary)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                <p style={{ color: "var(--text-muted)", fontSize: "15px", fontWeight: 600 }}>Searching with AI...</p>
-                <p style={{ color: "var(--text-muted)", fontSize: "12px" }}>Finding the most relevant jobs for you</p>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px", gap: "20px" }}>
+                <div style={{ position: "relative", width: "64px", height: "64px" }}>
+                  <div style={{ position: "absolute", inset: 0, border: "4px solid var(--border)", borderRadius: "50%" }} />
+                  <div style={{ position: "absolute", inset: 0, border: "4px solid transparent", borderTop: "4px solid #6366f1", borderRight: "4px solid #8b5cf6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  <div style={{ position: "absolute", inset: "8px", border: "3px solid transparent", borderBottom: "3px solid #a78bfa", borderLeft: "3px solid #6366f1", borderRadius: "50%", animation: "spin 1.2s linear infinite reverse" }} />
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🔍</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ color: "var(--text)", fontSize: "17px", fontWeight: 700, marginBottom: "6px" }}>Searching with AI...</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: "13px", fontWeight: 500 }}>Analyzing your query and finding the most relevant jobs</p>
+                </div>
+                <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#6366f1", animation: "bounce 1.4s ease-in-out infinite" }} />
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#8b5cf6", animation: "bounce 1.4s ease-in-out 0.2s infinite" }} />
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#a78bfa", animation: "bounce 1.4s ease-in-out 0.4s infinite" }} />
+                </div>
               </div>
             )}
             {activeTab === "all" && !searching && (
