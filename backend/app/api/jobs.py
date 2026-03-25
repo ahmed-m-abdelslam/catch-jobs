@@ -197,46 +197,6 @@ async def list_jobs(
     }
 
 
-@router.get("/{job_id}", response_model=JobResponse)
-async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Job).where(Job.id == job_id))
-    job = result.scalar_one_or_none()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return JobResponse.model_validate(job)
-
-
-@router.post("/save/{job_id}")
-async def save_job(
-    job_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    existing = await db.execute(
-        select(SavedJob).where(SavedJob.user_id == current_user.id, SavedJob.job_id == job_id)
-    )
-    if existing.scalar_one_or_none():
-        return {"detail": "Already saved"}
-
-    saved = SavedJob(user_id=current_user.id, job_id=job_id)
-    db.add(saved)
-    return {"detail": "Job saved"}
-
-
-@router.delete("/save/{job_id}")
-async def unsave_job(
-    job_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(SavedJob).where(SavedJob.user_id == current_user.id, SavedJob.job_id == job_id)
-    )
-    saved = result.scalar_one_or_none()
-    if saved:
-        await db.delete(saved)
-    return {"detail": "Removed"}
-
 
 @router.get("/ai-search")
 async def ai_search_jobs(
@@ -312,3 +272,44 @@ async def ai_search_jobs(
             jobs.append(job_dict)
 
     return jobs
+@router.get("/{job_id}", response_model=JobResponse)
+async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Job).where(Job.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobResponse.model_validate(job)
+
+
+@router.post("/save/{job_id}")
+async def save_job(
+    job_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(
+        select(SavedJob).where(SavedJob.user_id == current_user.id, SavedJob.job_id == job_id)
+    )
+    if existing.scalar_one_or_none():
+        return {"detail": "Already saved"}
+
+    saved = SavedJob(user_id=current_user.id, job_id=job_id)
+    db.add(saved)
+    return {"detail": "Job saved"}
+
+
+@router.delete("/save/{job_id}")
+async def unsave_job(
+    job_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(SavedJob).where(SavedJob.user_id == current_user.id, SavedJob.job_id == job_id)
+    )
+    saved = result.scalar_one_or_none()
+    if saved:
+        await db.delete(saved)
+    return {"detail": "Removed"}
+
+
