@@ -85,12 +85,19 @@ export default function DashboardPage() {
     }).finally(() => setLoading(false));
   }
 
-  function handleQuickSearch(e: React.FormEvent) {
+  async function handleQuickSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!quickSearch.trim()) return;
     setActiveTab("all");
     setCurrentPage(1);
-    loadAllJobs(1, quickSearch.trim());
+    try {
+      const results = await api.aiSearch(quickSearch.trim(), 30);
+      setAllJobs(results);
+      setTotalJobs(results.length);
+      setTotalPages(1);
+    } catch {
+      loadAllJobs(1, quickSearch.trim());
+    }
     setShowSearch(false);
   }
 
