@@ -453,7 +453,6 @@ export default function DashboardPage() {
                 </button>
 
                 {showDropdown && <div id="user-dropdown" style={{
-                  display: "none",
                   position: "absolute",
                   top: "calc(100% + 8px)",
                   right: 0,
