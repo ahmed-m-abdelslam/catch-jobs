@@ -254,7 +254,7 @@ async def analyze_cv(
     """Analyze user CV with AI and suggest job titles."""
     import base64, json
     from openai import OpenAI
-    from app.config import settings
+    from app.config import get_settings; settings = get_settings()
 
     if not current_user.cv_url:
         raise HTTPException(status_code=400, detail="No CV uploaded")
