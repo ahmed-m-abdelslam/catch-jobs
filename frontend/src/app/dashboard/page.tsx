@@ -281,7 +281,7 @@ export default function DashboardPage() {
             )}
 
             {/* Notification Bell */}
-            <div style={{ position: "relative" }}>
+            <div ref={notifRef} style={{ position: "relative" }}>
               <button
                 onClick={() => { setShowNotifPanel(!showNotifPanel); setShowDropdown(false); if (!showNotifPanel) loadNotifications(); }}
                 style={{
