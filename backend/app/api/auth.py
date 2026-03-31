@@ -1,7 +1,7 @@
 import uuid
 import bcrypt
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -169,3 +169,78 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+@router.put("/profile")
+async def update_profile(
+    full_name: str | None = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update user profile."""
+    if full_name and full_name.strip():
+        current_user.full_name = full_name.strip()
+    await db.commit()
+    await db.refresh(current_user)
+    return UserResponse.model_validate(current_user)
+
+
+@router.post("/upload-avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload profile picture."""
+    import base64
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    data = await file.read()
+    if len(data) > 2 * 1024 * 1024:  # 2MB limit
+        raise HTTPException(status_code=400, detail="Image must be less than 2MB")
+    
+    b64 = base64.b64encode(data).decode()
+    data_url = f"data:{file.content_type};base64,{b64}"
+    
+    current_user.avatar_url = data_url
+    await db.commit()
+    await db.refresh(current_user)
+    return {"avatar_url": data_url}
+
+
+@router.post("/upload-cv")
+async def upload_cv(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload CV/Resume."""
+    import base64
+    allowed = ["application/pdf", "application/msword", 
+               "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+    if not file.content_type or file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="File must be PDF or Word document")
+    
+    data = await file.read()
+    if len(data) > 5 * 1024 * 1024:  # 5MB limit
+        raise HTTPException(status_code=400, detail="CV must be less than 5MB")
+    
+    b64 = base64.b64encode(data).decode()
+    data_url = f"data:{file.content_type};base64,{b64}"
+    
+    current_user.cv_url = data_url
+    await db.commit()
+    await db.refresh(current_user)
+    return {"cv_url": "uploaded", "filename": file.filename}
+
+
+@router.delete("/remove-cv")
+async def remove_cv(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Remove uploaded CV."""
+    current_user.cv_url = None
+    await db.commit()
+    return {"message": "CV removed"}
+

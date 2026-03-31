@@ -41,6 +41,14 @@ async def lifespan(app: FastAPI):
             print(f"Embedding migration check: {e}")
     print("Database tables ready!")
 
+    # Add cv_url column if missing
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS cv_url VARCHAR(500)"))
+            print("cv_url column ready!")
+    except Exception as e:
+        print(f"cv_url column: {e}")
+
     # Create HNSW index for fast vector search
     try:
         async with engine.begin() as conn:

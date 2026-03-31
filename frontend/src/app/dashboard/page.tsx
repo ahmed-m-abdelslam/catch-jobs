@@ -468,6 +468,12 @@ export default function DashboardPage() {
                     <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>{user.full_name}</p>
                     <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{user.email}</p>
                   </div>
+                  <button onClick={() => { window.location.href = "/profile"; setShowDropdown(false); }}
+                    style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "var(--text-light)", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--hover-bg)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                    👤 My Profile
+                  </button>
                   <button onClick={() => { setActiveTab("preferences"); setShowDropdown(false); }}
                     style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "var(--text-light)", transition: "background 0.15s" }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}

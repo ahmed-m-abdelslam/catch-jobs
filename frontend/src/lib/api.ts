@@ -6,7 +6,37 @@ const API_URL = typeof window !== "undefined"
 
 class ApiClient {
   private getHeaders(auth = true): Record<string, string> {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = { "Content-Type": "application/json" 
+  async updateProfile(fullName: string) {
+    const form = new FormData();
+    form.append("full_name", fullName);
+    const res = await fetch(\`\${API_URL}/auth/profile\`, { method: "PUT", headers: { "Authorization": \`Bearer \${this.getToken()}\` }, body: form });
+    if (!res.ok) throw new Error("Update failed");
+    return res.json();
+  },
+
+  async uploadAvatar(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(\`\${API_URL}/auth/upload-avatar\`, { method: "POST", headers: { "Authorization": \`Bearer \${this.getToken()}\` }, body: form });
+    if (!res.ok) throw new Error("Upload failed");
+    return res.json();
+  },
+
+  async uploadCV(file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(\`\${API_URL}/auth/upload-cv\`, { method: "POST", headers: { "Authorization": \`Bearer \${this.getToken()}\` }, body: form });
+    if (!res.ok) throw new Error("Upload failed");
+    return res.json();
+  },
+
+  async removeCV() {
+    const res = await fetch(\`\${API_URL}/auth/remove-cv\`, { method: "DELETE", headers: this.getHeaders() });
+    if (!res.ok) throw new Error("Remove failed");
+    return res.json();
+  },
+};
     if (auth && typeof window !== "undefined") {
       const token = localStorage.getItem("token");
       if (token) headers["Authorization"] = `Bearer ${token}`;
