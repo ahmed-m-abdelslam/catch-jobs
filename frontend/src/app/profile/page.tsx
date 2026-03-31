@@ -10,11 +10,13 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [uploading, setUploading] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
   const avatarRef = useRef<HTMLInputElement>(null);
   const cvRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    api.getMe().then((u: any) => { setUser(u); setFullName(u.full_name); }).catch(() => window.location.href = "/login");
+    api.getMe().then((u: any) => { setUser(u); setFullName(u.full_name); if (u.suggested_titles) { try { setSuggestedTitles(JSON.parse(u.suggested_titles)); } catch {} } }).catch(() => window.location.href = "/login");
   }, []);
 
   async function handleSave() {
@@ -47,8 +49,20 @@ export default function ProfilePage() {
     try {
       const result = await api.uploadCV(file);
       setUser((prev: any) => ({ ...prev, cv_url: result.filename || "uploaded" }));
-      setMsg("CV uploaded!");
-      setTimeout(() => setMsg(""), 3000);
+      setMsg("CV uploaded! Analyzing with AI...");
+      // Auto-analyze CV
+      try {
+        setAnalyzing(true);
+        const analysis = await api.analyzeCV();
+        setSuggestedTitles(analysis.suggested_titles || []);
+        setMsg("CV analyzed! Job titles suggested.");
+        setTimeout(() => setMsg(""), 3000);
+      } catch (err: any) {
+        setMsg("CV uploaded but analysis failed: " + (err.message || ""));
+        setTimeout(() => setMsg(""), 5000);
+      } finally {
+        setAnalyzing(false);
+      }
     } catch (err: any) { setMsg(err.message || "Upload failed"); }
     finally { setUploading(""); }
   }
@@ -56,7 +70,8 @@ export default function ProfilePage() {
   async function handleRemoveCV() {
     try {
       await api.removeCV();
-      setUser((prev: any) => ({ ...prev, cv_url: null }));
+      setUser((prev: any) => ({ ...prev, cv_url: null, suggested_titles: null }));
+      setSuggestedTitles([]);
       setMsg("CV removed");
       setTimeout(() => setMsg(""), 3000);
     } catch { setMsg("Failed to remove CV"); }
@@ -199,6 +214,57 @@ export default function ProfilePage() {
           )}
           <input ref={cvRef} type="file" accept=".pdf,.doc,.docx" hidden onChange={handleCV} />
         </div>
+
+        {/* AI Suggested Job Titles */}
+        {(suggestedTitles.length > 0 || analyzing) && (
+          <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "20px", padding: "32px", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", marginTop: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🤖</div>
+              <div>
+                <h2 style={{ fontSize: "18px", fontWeight: 800, color: "var(--text)" }}>AI Suggested Job Titles</h2>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>Based on your CV analysis</p>
+              </div>
+            </div>
+
+            {analyzing ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px", gap: "12px" }}>
+                <div style={{ width: "40px", height: "40px", border: "4px solid var(--border)", borderTop: "4px solid #6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <p style={{ fontSize: "14px", color: "var(--text-muted)", fontWeight: 600 }}>Analyzing your CV with AI...</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {suggestedTitles.map((title, i) => (
+                  <div key={i} style={{
+                    padding: "10px 18px", borderRadius: "12px",
+                    background: "linear-gradient(135deg, #6366f110, #8b5cf610)",
+                    border: "1px solid #6366f130",
+                    fontSize: "14px", fontWeight: 600, color: "var(--text)",
+                    display: "flex", alignItems: "center", gap: "8px",
+                  }}>
+                    <span style={{ fontSize: "16px" }}>💼</span>
+                    {title}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {suggestedTitles.length > 0 && !analyzing && (
+              <button onClick={async () => {
+                setAnalyzing(true);
+                try {
+                  const analysis = await api.analyzeCV();
+                  setSuggestedTitles(analysis.suggested_titles || []);
+                  setMsg("Titles refreshed!");
+                  setTimeout(() => setMsg(""), 3000);
+                } catch (err: any) { setMsg(err.message || "Refresh failed"); }
+                finally { setAnalyzing(false); }
+              }}
+                style={{ marginTop: "16px", padding: "8px 16px", borderRadius: "10px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                🔄 Re-analyze CV
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

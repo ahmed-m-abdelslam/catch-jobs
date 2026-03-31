@@ -241,6 +241,83 @@ async def remove_cv(
 ):
     """Remove uploaded CV."""
     current_user.cv_url = None
+    current_user.suggested_titles = None
     await db.commit()
     return {"message": "CV removed"}
+
+
+@router.post("/analyze-cv")
+async def analyze_cv(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Analyze user CV with AI and suggest job titles."""
+    import base64, json
+    from openai import OpenAI
+    from app.config import settings
+
+    if not current_user.cv_url:
+        raise HTTPException(status_code=400, detail="No CV uploaded")
+
+    # Extract text from base64 CV
+    try:
+        # Get the base64 data
+        b64_data = current_user.cv_url.split(",")[1] if "," in current_user.cv_url else current_user.cv_url
+        cv_bytes = base64.b64decode(b64_data)
+        
+        # Extract text based on content type
+        cv_text = ""
+        if "application/pdf" in current_user.cv_url:
+            try:
+                import fitz  # PyMuPDF
+                doc = fitz.open(stream=cv_bytes, filetype="pdf")
+                for page in doc:
+                    cv_text += page.get_text()
+                doc.close()
+            except ImportError:
+                # Fallback: send raw bytes info to GPT
+                cv_text = cv_bytes[:3000].decode("utf-8", errors="ignore")
+        else:
+            cv_text = cv_bytes[:3000].decode("utf-8", errors="ignore")
+        
+        if not cv_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from CV")
+
+        # Truncate to avoid token limits
+        cv_text = cv_text[:4000]
+
+        # Call GPT to analyze
+        client = OpenAI(api_key=settings.openai_api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a career advisor. Analyze the CV and suggest exactly 5 job titles that best match the person's skills and experience. Return ONLY a JSON array of 5 strings, nothing else. Example: [\"Data Scientist\", \"ML Engineer\", \"AI Researcher\", \"Data Analyst\", \"NLP Engineer\"]"},
+                {"role": "user", "content": f"Analyze this CV and suggest 5 job titles:\n\n{cv_text}"}
+            ],
+            temperature=0.3,
+            max_tokens=200,
+        )
+
+        result = response.choices[0].message.content.strip()
+        
+        # Parse and validate
+        titles = json.loads(result)
+        if not isinstance(titles, list) or len(titles) == 0:
+            raise ValueError("Invalid response format")
+        
+        titles = titles[:5]  # Ensure max 5
+        titles_str = json.dumps(titles)
+
+        # Save to user
+        current_user.suggested_titles = titles_str
+        await db.commit()
+        await db.refresh(current_user)
+
+        return {"suggested_titles": titles}
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid format")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
 

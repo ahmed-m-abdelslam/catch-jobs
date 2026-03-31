@@ -39,6 +39,7 @@ class UserResponse(BaseModel):
     full_name: str
     avatar_url: str | None
     cv_url: str | None
+    suggested_titles: str | None
     created_at: datetime
 
     class Config:

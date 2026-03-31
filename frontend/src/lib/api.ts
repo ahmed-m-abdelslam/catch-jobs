@@ -198,6 +198,12 @@ class ApiClient {
     if (!res.ok) throw new Error("Remove failed");
     return res.json();
   }
+
+  async analyzeCV() {
+    const res = await fetch(`${API_URL}/auth/analyze-cv`, { method: "POST", headers: this.getHeaders() });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Analysis failed"); }
+    return res.json();
+  },
 }
 
 export const api = new ApiClient();
