@@ -30,6 +30,9 @@ export default function DashboardPage() {
   const [notifCount, setNotifCount] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [quickSearch, setQuickSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -39,6 +42,19 @@ export default function DashboardPage() {
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const pageSize = 20;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifPanel(false);
+      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     api.getMe().then(setUser).catch(() => { window.location.href = "/login"; });
@@ -267,7 +283,7 @@ export default function DashboardPage() {
             {/* Notification Bell */}
             <div style={{ position: "relative" }}>
               <button
-                onClick={() => { setShowNotifPanel(!showNotifPanel); if (!showNotifPanel) loadNotifications(); }}
+                onClick={() => { setShowNotifPanel(!showNotifPanel); setShowDropdown(false); if (!showNotifPanel) loadNotifications(); }}
                 style={{
                   width: "40px",
                   height: "40px",
@@ -402,12 +418,9 @@ export default function DashboardPage() {
 
             {/* User Avatar & Dropdown */}
             {user && (
-              <div style={{ position: "relative" }}>
+              <div ref={dropdownRef} style={{ position: "relative" }}>
                 <button
-                  onClick={() => {
-                    const menu = document.getElementById("user-dropdown");
-                    if (menu) menu.style.display = menu.style.display === "none" ? "block" : "none";
-                  }}
+                  onClick={() => { setShowDropdown(!showDropdown); setShowNotifPanel(false); }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -439,7 +452,7 @@ export default function DashboardPage() {
                   </svg>
                 </button>
 
-                <div id="user-dropdown" style={{
+                {showDropdown && <div id="user-dropdown" style={{
                   display: "none",
                   position: "absolute",
                   top: "calc(100% + 8px)",
@@ -456,12 +469,12 @@ export default function DashboardPage() {
                     <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>{user.full_name}</p>
                     <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{user.email}</p>
                   </div>
-                  <button onClick={() => { setActiveTab("preferences"); const m = document.getElementById("user-dropdown"); if(m) m.style.display="none"; }}
+                  <button onClick={() => { setActiveTab("preferences"); setShowDropdown(false); }}
                     style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "var(--text-light)", transition: "background 0.15s" }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >⚙️ Preferences</button>
-                  <button onClick={() => { setActiveTab("saved"); const m = document.getElementById("user-dropdown"); if(m) m.style.display="none"; }}
+                  <button onClick={() => { setActiveTab("saved"); setShowDropdown(false); }}
                     style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "10px 12px", borderRadius: "8px", border: "none", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: "var(--text-light)", transition: "background 0.15s" }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = "var(--hover-bg)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
@@ -473,7 +486,7 @@ export default function DashboardPage() {
                       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     >🚪 Logout</button>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
 
