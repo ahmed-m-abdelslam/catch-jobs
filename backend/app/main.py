@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("ALTER TABLE users ALTER COLUMN avatar_url TYPE TEXT"))
             await conn.execute(text("ALTER TABLE users ALTER COLUMN cv_url TYPE TEXT"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS suggested_titles TEXT"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS suggested_titles TEXT"))
             print("avatar_url & cv_url columns ready (TEXT)!")
     except Exception as e:
         print(f"Column migration: {e}")
