@@ -209,8 +209,12 @@ async def ai_search_jobs(
     import asyncpg
     import ssl as _ssl
 
-    # Generate embedding for the search query
-    query_embedding = generate_embedding(f"Job: {q}")
+    # Check cache first
+    query_embedding = _get_cached_embedding(q)
+    if not query_embedding:
+        query_embedding = generate_embedding(f"Job: {q}")
+        if query_embedding:
+            _set_cached_embedding(q, query_embedding)
     if not query_embedding:
         # Fallback to text search
         query = select(Job).where(
@@ -237,9 +241,10 @@ async def ai_search_jobs(
 
     try:
         if country:
+            await conn.execute("SET hnsw.ef_search = 100")
             rows = await conn.fetch("""
                 SELECT j.id, j.title, j.company_name, j.location, j.country,
-                       j.description, j.job_url, j.source, j.posted_date, j.created_at,
+                       j.job_url, j.source, j.posted_date, j.created_at,
                        1 - (je.embedding <=> $1::vector) AS similarity
                 FROM jobs j
                 JOIN job_embeddings je ON je.job_id = j.id
@@ -249,9 +254,10 @@ async def ai_search_jobs(
                 LIMIT $3
             """, embedding_str, f"%{country}%", limit)
         else:
+            await conn.execute("SET hnsw.ef_search = 100")
             rows = await conn.fetch("""
                 SELECT j.id, j.title, j.company_name, j.location, j.country,
-                       j.description, j.job_url, j.source, j.posted_date, j.created_at,
+                       j.job_url, j.source, j.posted_date, j.created_at,
                        1 - (je.embedding <=> $1::vector) AS similarity
                 FROM jobs j
                 JOIN job_embeddings je ON je.job_id = j.id

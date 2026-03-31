@@ -41,6 +41,19 @@ async def lifespan(app: FastAPI):
             print(f"Embedding migration check: {e}")
     print("Database tables ready!")
 
+    # Create HNSW index for fast vector search
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS idx_job_embeddings_hnsw
+                ON job_embeddings
+                USING hnsw (embedding vector_cosine_ops)
+                WITH (m = 16, ef_construction = 64)
+            """))
+            print("HNSW vector index ready!")
+    except Exception as e:
+        print(f"HNSW index: {e}")
+
     # Background scraper (replaces Celery)
     async def background_scraper():
         await asyncio.sleep(60)  # Wait 1 min after startup
