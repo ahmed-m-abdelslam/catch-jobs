@@ -439,12 +439,17 @@ export default function DashboardPage() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+                    background: user.avatar_url ? "transparent" : "linear-gradient(135deg, #3b82f6, #6366f1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    overflow: "hidden",
                   }}>
-                    <span style={{ color: "white", fontSize: "13px", fontWeight: 800 }}>{user.full_name?.[0]?.toUpperCase()}</span>
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <span style={{ color: "white", fontSize: "13px", fontWeight: 800 }}>{user.full_name?.[0]?.toUpperCase()}</span>
+                    )}
                   </div>
                   <span className="hidden sm:inline" style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>{user.full_name}</span>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="hidden sm:inline" style={{ color: "var(--text-muted)" }}>
