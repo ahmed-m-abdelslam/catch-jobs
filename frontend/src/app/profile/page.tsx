@@ -12,8 +12,6 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
   const avatarRef = useRef<HTMLInputElement>(null);
   const cvRef = useRef<HTMLInputElement>(null);
 
