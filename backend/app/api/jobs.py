@@ -343,18 +343,25 @@ async def unsave_job(
 
 @router.post("/cleanup-old")
 async def cleanup_old_jobs_endpoint():
-    from sqlalchemy import text
-    async with async_engine.begin() as conn:
-        # First delete embeddings for old jobs
-        await conn.execute(text(
-            "DELETE FROM job_embeddings WHERE job_id IN (SELECT id FROM jobs WHERE created_at < NOW() - INTERVAL '15 days')"
-        ))
-        # Delete saved_jobs for old jobs
-        await conn.execute(text(
-            "DELETE FROM saved_jobs WHERE job_id IN (SELECT id FROM jobs WHERE created_at < NOW() - INTERVAL '15 days')"
-        ))
-        # Delete the old jobs
-        result = await conn.execute(text(
-            "DELETE FROM jobs WHERE created_at < NOW() - INTERVAL '15 days'"
-        ))
-        return {"deleted": result.rowcount}
+    try:
+        from app.database import engine
+        from sqlalchemy import text
+        async with engine.begin() as conn:
+            count_result = await conn.execute(text(
+                "SELECT COUNT(*) FROM jobs WHERE created_at < NOW() - INTERVAL '15 days'"
+            ))
+            old_count = count_result.scalar()
+            if old_count == 0:
+                return {"deleted": 0, "message": "No jobs older than 15 days"}
+            await conn.execute(text(
+                "DELETE FROM job_embeddings WHERE job_id IN (SELECT id FROM jobs WHERE created_at < NOW() - INTERVAL '15 days')"
+            ))
+            await conn.execute(text(
+                "DELETE FROM saved_jobs WHERE job_id IN (SELECT id FROM jobs WHERE created_at < NOW() - INTERVAL '15 days')"
+            ))
+            result = await conn.execute(text(
+                "DELETE FROM jobs WHERE created_at < NOW() - INTERVAL '15 days'"
+            ))
+            return {"deleted": result.rowcount}
+    except Exception as e:
+        return {"error": str(e)}
