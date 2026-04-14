@@ -342,24 +342,21 @@ async def unsave_job(
     return {"detail": "Removed"}
 
 
-
-
 @router.post("/cleanup-old")
 async def cleanup_old_jobs_endpoint():
     from app.database import async_engine
+    from sqlalchemy import text
     async with async_engine.begin() as conn:
-        result = await conn.execute(text(
-            "DELETE FROM jobs WHERE created_at < NOW() - INTERVAL '15 days' RETURNING id"
+        # First delete embeddings for old jobs
+        await conn.execute(text(
+            "DELETE FROM job_embeddings WHERE job_id IN (SELECT id FROM jobs WHERE created_at < NOW() - INTERVAL '15 days')"
         ))
-        deleted_ids = [str(row[0]) for row in result.fetchall()]
-        if deleted_ids:
-            await conn.execute(text(
-                "DELETE FROM job_embeddings WHERE job_id = ANY(CAST(:ids AS uuid[]))"
-            ), {"ids": deleted_ids})
-            try:
-                await conn.execute(text(
-                    "DELETE FROM saved_jobs WHERE job_id = ANY(CAST(:ids AS uuid[]))"
-                ), {"ids": deleted_ids})
-            except Exception:
-                pass
-        return {"deleted": len(deleted_ids)}
+        # Delete saved_jobs for old jobs
+        await conn.execute(text(
+            "DELETE FROM saved_jobs WHERE job_id IN (SELECT id FROM jobs WHERE created_at < NOW() - INTERVAL '15 days')"
+        ))
+        # Delete the old jobs
+        result = await conn.execute(text(
+            "DELETE FROM jobs WHERE created_at < NOW() - INTERVAL '15 days'"
+        ))
+        return {"deleted": result.rowcount}
