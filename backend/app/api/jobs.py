@@ -1,8 +1,9 @@
+from app.database import async_engine
 import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import text, select, func
 
 from app.database import get_db
 from app.api.auth import get_current_user
@@ -341,3 +342,24 @@ async def unsave_job(
     return {"detail": "Removed"}
 
 
+
+
+@router.post("/cleanup-old")
+async def cleanup_old_jobs_endpoint():
+    from app.database import async_engine
+    async with async_engine.begin() as conn:
+        result = await conn.execute(text(
+            "DELETE FROM jobs WHERE created_at < NOW() - INTERVAL '15 days' RETURNING id"
+        ))
+        deleted_ids = [str(row[0]) for row in result.fetchall()]
+        if deleted_ids:
+            await conn.execute(text(
+                "DELETE FROM job_embeddings WHERE job_id = ANY(CAST(:ids AS uuid[]))"
+            ), {"ids": deleted_ids})
+            try:
+                await conn.execute(text(
+                    "DELETE FROM saved_jobs WHERE job_id = ANY(CAST(:ids AS uuid[]))"
+                ), {"ids": deleted_ids})
+            except Exception:
+                pass
+        return {"deleted": len(deleted_ids)}
