@@ -315,8 +315,8 @@ async def analyze_cv(
 
         return {"suggested_titles": titles}
 
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="AI returned invalid format")
+    except json.JSONDecodeError as je:
+        raise HTTPException(status_code=500, detail=f"AI returned invalid format. Raw: {result[:200] if result else 'empty'}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
