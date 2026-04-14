@@ -300,7 +300,14 @@ async def analyze_cv(
 
         result = response.choices[0].message.content.strip()
         
-        # Parse and validate
+        # Clean markdown code blocks and extract JSON array
+        clean = result.replace('```json', '').replace('```', '').strip()
+        # Find the JSON array
+        start = clean.find('[')
+        end = clean.rfind(']')
+        if start != -1 and end != -1:
+            clean = clean[start:end+1]
+        
         titles = json.loads(result)
         if not isinstance(titles, list) or len(titles) == 0:
             raise ValueError("Invalid response format")
