@@ -215,39 +215,6 @@ export default function ProfilePage() {
           <input ref={cvRef} type="file" accept=".pdf,.doc,.docx" hidden onChange={handleCV} />
         </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                {suggestedTitles.map((title, i) => (
-                  <div key={i} style={{
-                    padding: "10px 18px", borderRadius: "12px",
-                    background: "linear-gradient(135deg, #6366f110, #8b5cf610)",
-                    border: "1px solid #6366f130",
-                    fontSize: "14px", fontWeight: 600, color: "var(--text)",
-                    display: "flex", alignItems: "center", gap: "8px",
-                  }}>
-                    <span style={{ fontSize: "16px" }}>💼</span>
-                    {title}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {suggestedTitles.length > 0 && !analyzing && (
-              <button onClick={async () => {
-                setAnalyzing(true);
-                try {
-                  const analysis = await api.analyzeCV();
-                  setSuggestedTitles(analysis.suggested_titles || []);
-                  setMsg("Titles refreshed!");
-                  setTimeout(() => setMsg(""), 3000);
-                } catch (err: any) { setMsg(err.message || "Refresh failed"); }
-                finally { setAnalyzing(false); }
-              }}
-                style={{ marginTop: "16px", padding: "8px 16px", borderRadius: "10px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
-                🔄 Re-analyze CV
-              </button>
-            )}
-          </div>
-        )}
 
         {/* AI Suggested Job Titles */}
         {(suggestedTitles.length > 0 || analyzing) && (
