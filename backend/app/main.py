@@ -82,12 +82,41 @@ async def lifespan(app: FastAPI):
                 print(f"[Scraper] Error: {e}")
             await asyncio.sleep(600)  # Every 10 minutes
 
+    async def cleanup_old_jobs():
+        await asyncio.sleep(120)  # Wait 2 min after startup
+        while True:
+            try:
+                async with async_engine.begin() as conn:
+                    result = await conn.execute(text(
+                        "DELETE FROM jobs WHERE created_at < NOW() - INTERVAL '15 days' RETURNING id"
+                    ))
+                    deleted_ids = [row[0] for row in result.fetchall()]
+                    if deleted_ids:
+                        # Also clean up embeddings for deleted jobs
+                        await conn.execute(text(
+                            "DELETE FROM job_embeddings WHERE job_id = ANY(:ids)"
+                        ), {"ids": deleted_ids})
+                        # Clean up saved jobs references
+                        await conn.execute(text(
+                            "DELETE FROM saved_jobs WHERE job_id = ANY(:ids)"
+                        ), {"ids": [str(i) for i in deleted_ids]})
+                        print(f"[Cleanup] Deleted {len(deleted_ids)} jobs older than 15 days")
+                    else:
+                        print("[Cleanup] No old jobs to delete")
+            except Exception as e:
+                print(f"[Cleanup] Error: {e}")
+            await asyncio.sleep(86400)  # Run once per day
+
     scraper_task = asyncio.create_task(background_scraper())
     print("Background scraper started (every 10 minutes)")
+
+    cleanup_task = asyncio.create_task(cleanup_old_jobs())
+    print("Cleanup task started (deletes jobs older than 15 days, runs daily)")
 
     yield
 
     scraper_task.cancel()
+    cleanup_task.cancel()
     await engine.dispose()
 
 
