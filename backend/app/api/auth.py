@@ -308,7 +308,7 @@ async def analyze_cv(
         if start != -1 and end != -1:
             clean = clean[start:end+1]
         
-        titles = json.loads(result)
+        titles = json.loads(clean)
         if not isinstance(titles, list) or len(titles) == 0:
             raise ValueError("Invalid response format")
         
