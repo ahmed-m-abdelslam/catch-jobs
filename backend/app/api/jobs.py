@@ -1,4 +1,3 @@
-from app.database import async_engine
 import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Query, HTTPException
@@ -344,7 +343,6 @@ async def unsave_job(
 
 @router.post("/cleanup-old")
 async def cleanup_old_jobs_endpoint():
-    from app.database import async_engine
     from sqlalchemy import text
     async with async_engine.begin() as conn:
         # First delete embeddings for old jobs
